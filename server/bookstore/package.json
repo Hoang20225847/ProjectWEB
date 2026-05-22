@@ -1,0 +1,33 @@
+{
+  "name": "bookstore",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "start:prod": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate:cost-dong:dry": "node scripts/migrate-costprice-to-dong.js --dry-run",
+    "migrate:cost-dong": "node scripts/migrate-costprice-to-dong.js --apply"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "axios": "^1.9.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.14.1",
+    "multer": "^2.0.0",
+    "nodemailer": "^8.0.7",
+    "vnpay": "^2.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

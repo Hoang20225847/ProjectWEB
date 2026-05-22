@@ -1,0 +1,20 @@
+# Render Blueprint — đặt tại root repo (ProjectWEB)
+services:
+  - type: web
+    name: bookstore-api
+    runtime: node
+    rootDir: server/bookstore
+    buildCommand: npm install
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: CLIENT_BASE_URL
+        sync: false
+      - key: API_PUBLIC_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
