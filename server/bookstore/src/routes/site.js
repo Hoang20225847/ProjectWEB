@@ -1,6 +1,7 @@
 const express = require ('express');
 const router =express.Router();
 const upload =require('../MiddleWare/upload')
+const uploadBookCover = require('../MiddleWare/uploadBookCover')
 const SiteController =require('../app/controllers/SiteController')
 const CartController =require('../app/controllers/CartController')
 const OrderController =require('../app/controllers/OrderController');
@@ -49,6 +50,14 @@ router.delete('/authors/:id', AuthorController.remove);
 router.put('/authors/:id/members', AuthorController.setMembers);
 router.get('/authors/:id/books', AuthorController.booksByAuthor);
 router.delete(`/books/:id`,SiteController.removeBook)
+router.post('/books/upload-cover', (req, res, next) => {
+  uploadBookCover.single('cover')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message || 'Upload ảnh thất bại' });
+    }
+    return SiteController.uploadBookCover(req, res);
+  });
+})
 router.post('/books',SiteController.createBook)
 router.put('/books',SiteController.updateBook)
 router.get('/account/search',SiteController.getAccountSearch);

@@ -11,6 +11,7 @@ const Book = require('../models/Books');
 const AccountUser = require('../models/AccountUsers');
 const { isWebOrderableListing } = require('../utils/bookVisibility');
 const { getActiveFlashSaleMap } = require('../services/flashSaleService');
+const { createVietnameseRegex } = require('../../utils/vietnameseSearch');
 const {
   quoteCheckout,
   incrementVoucherUse,
@@ -481,10 +482,11 @@ class OrderController{
     async getOrderSearch(req,res,next){
 
       try{
-        const keySearch=req.query.key
-         
-        const searchRegex = new RegExp(keySearch, 'i');
-        console.log(keySearch)
+        const keySearch = String(req.query.key || '').trim();
+        const searchRegex = createVietnameseRegex(keySearch);
+        if (!searchRegex) {
+          return res.status(200).json([]);
+        }
      
            let objectid;
         if(mongoose.Types.ObjectId.isValid(keySearch))

@@ -47,6 +47,11 @@ const Book =new Schema({
     format: { type: String, default: null, trim: true, maxlength: 32 },
     description:{type:String},
     img:{type:String},
+    /** Ảnh phụ trang chi tiết (gallery, tối đa 4) */
+    img1: { type: String, default: '' },
+    img2: { type: String, default: '' },
+    img3: { type: String, default: '' },
+    img4: { type: String, default: '' },
     createAt:{type:Date,default:Date.now},
     updateAt:{type:Date,default:Date.now},
     category:{type:Schema.Types.ObjectId,ref:'Category',required:true},

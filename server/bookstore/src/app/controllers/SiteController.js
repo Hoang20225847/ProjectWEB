@@ -19,6 +19,9 @@ const {
 const { bookPriceToStorageString } = require('../utils/moneyVnd');
 const { computeMembershipSpendProgress } = require('../services/membershipService');
 const flashSaleService = require('../services/flashSaleService');
+const { getPublicApiUrl } = require('../../config/appConfig');
+const { slugifyBookName } = require('../utils/bookCoverFilename');
+const { createVietnameseRegex } = require('../../utils/vietnameseSearch');
 
 const BOOK_FORMATS = new Set([
   'paperback',
@@ -703,6 +706,33 @@ async createAddress(req,res,next)
         .json({ message: 'Lỗi dữ liệu', error: String(error.message || error) });
     }
   }
+  /** POST /api/books/upload-cover — admin upload ảnh bìa, tên file theo tên sách */
+  async uploadBookCover(req, res) {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Chỉ quản trị viên mới được upload ảnh sách' });
+      }
+      if (!req.file) {
+        return res.status(400).json({ message: 'Vui lòng chọn file ảnh' });
+      }
+      const bookName = String(req.body?.bookName || req.body?.name || '').trim();
+      if (!bookName) {
+        return res.status(400).json({ message: 'Vui lòng nhập tên sách trước khi upload ảnh' });
+      }
+      const url = `/uploads/${req.file.filename}`;
+      return res.status(200).json({
+        url,
+        fullUrl: `${getPublicApiUrl()}${url}`,
+        filename: req.file.filename,
+        slug: slugifyBookName(bookName),
+      });
+    } catch (error) {
+      return res.status(400).json({
+        message: error.message || 'Upload ảnh thất bại',
+      });
+    }
+  }
+
      async createBook(req,res,next)
        {
               
@@ -712,6 +742,11 @@ async createAddress(req,res,next)
               name,
               description,
               image,
+              img: imgBody,
+              img1,
+              img2,
+              img3,
+              img4,
               category,
               price,
               publisher,
@@ -801,10 +836,15 @@ async createAddress(req,res,next)
               return res.status(400).json({ message: 'Giá không hợp lệ (VD: 150.000đ)' });
             }
             // Tạo tài khoản mới
+            const mainImg = imgBody || image || '';
             const newBooks = new Book({
                 name,
                 description,
-                img:image,
+                img: mainImg,
+                img1: img1 != null ? String(img1).trim() : '',
+                img2: img2 != null ? String(img2).trim() : '',
+                img3: img3 != null ? String(img3).trim() : '',
+                img4: img4 != null ? String(img4).trim() : '',
                 category: categoryDoc._id,
                 price: priceNorm,
                 publisher: publisher != null ? String(publisher).trim().slice(0, 200) : '',
@@ -1372,7 +1412,10 @@ async createAddress(req,res,next)
           const a = await Author.findById(keyOid).select('_id').lean();
           if (a) authorRefById = [{ authorRef: a._id }];
         }
-        const searchRegex = new RegExp(keySearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        const searchRegex = createVietnameseRegex(keyTrim);
+        if (!searchRegex) {
+          return res.status(200).json([]);
+        }
         const matchingCats = await Category.find({ name: { $regex: searchRegex } }).select('_id');
         const catIds = matchingCats.map((c) => c._id);
         const matchingAuthors = await Author.find({ name: { $regex: searchRegex } }).select('_id');
@@ -1405,8 +1448,11 @@ async createAddress(req,res,next)
      }
      async getAccountSearch(req,res,next){
       try{
-        const keySearch=req.query.key;
-        const searchRegex=new RegExp(keySearch,'i')
+        const keySearch = String(req.query.key || '').trim();
+        const searchRegex = createVietnameseRegex(keySearch);
+        if (!searchRegex) {
+          return res.status(200).json([]);
+        }
         const accounts = await Account.find({ email: { $regex: searchRegex } })
           .populate('membershipTier', 'name slug sortOrder active')
           .lean();

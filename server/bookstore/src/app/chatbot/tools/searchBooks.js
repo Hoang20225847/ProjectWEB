@@ -1,4 +1,5 @@
 const Book = require('../../models/Books');
+const { createVietnameseRegex } = require('../../../utils/vietnameseSearch');
 
 /**
  * Tìm sách phục vụ chatbot.
@@ -71,13 +72,13 @@ async function searchBooks(args = {}) {
   };
 
   if (args.keyword) {
-    const safe = String(args.keyword).trim().replace(/[$.*+?^${}()|[\]\\]/g, '\\$&');
-    if (safe) {
+    const searchRegex = createVietnameseRegex(String(args.keyword).trim());
+    if (searchRegex) {
       filter.$and.push({
         $or: [
-          { name: { $regex: safe, $options: 'i' } },
-          { author: { $regex: safe, $options: 'i' } },
-          { description: { $regex: safe, $options: 'i' } },
+          { name: { $regex: searchRegex } },
+          { author: { $regex: searchRegex } },
+          { description: { $regex: searchRegex } },
         ],
       });
     }

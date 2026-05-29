@@ -6,7 +6,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const route = require('./src/routes');
-const Book = require('./src/app/models/Books');
 const { initChatbot } = require('./src/app/chatbot');
 const {
   getPort,
@@ -17,6 +16,7 @@ const {
 } = require('./src/config/appConfig');
 
 const app = express();
+app.set('trust proxy', 1);
 const port = getPort();
 const mongoURI = getMongoUri();
 const uploadsDir = path.join(__dirname, 'src/public/uploads');
@@ -53,21 +53,6 @@ async function bootstrap() {
   try {
     await mongoose.connect(mongoURI);
     console.log('Kết nối MongoDB thành công!', isProduction() ? '(production)' : '(dev)');
-
-    Book.updateMany(
-      { isMemberOnly: { $ne: true } },
-      { $set: { isMemberOnly: true } },
-    )
-      .then((result) => {
-        if ((result.modifiedCount || 0) > 0) {
-          console.log(
-            `Đã cập nhật ${result.modifiedCount} sách sang chế độ hội viên mặc định.`,
-          );
-        }
-      })
-      .catch((err) => {
-        console.error('Không thể cập nhật mặc định sách hội viên:', err);
-      });
 
     try {
       initChatbot(app);

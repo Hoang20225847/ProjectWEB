@@ -105,11 +105,20 @@ npm start
 
 ---
 
-## 5. VNPay (khi go-live)
+## 5. VNPay (sandbox demo)
 
-- `API_PUBLIC_URL` = URL Render.
-- `CLIENT_BASE_URL` = URL Vercel.
-- Cấu hình Return URL trên cổng VNPay: `https://xxx.onrender.com/payapi/check-payment-vnpay`
+**Local:** Return URL = `http://localhost:3001/payapi/check-payment-vnpay` (tự dùng khi `API_PUBLIC_URL` trống).
+
+**Deploy:**
+
+- `API_PUBLIC_URL` = URL Render (API).
+- `CLIENT_BASE_URL` = URL Vercel (frontend).
+- Cổng VNPay sandbox — IPN/Return: `https://<api-host>/payapi/check-payment-vnpay`
+- Tuỳ chọn env: `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_HOST`
+
+**Test sandbox:** Checkout → chọn **VNPay** → thanh toán trên `sandbox.vnpayment.vn` → quay về `/profile/purchase?payment=success&method=vnpay`.
+
+Thẻ demo (tham khảo tài liệu VNPay): Ngân hàng NCB, số thẻ `9704198526191432198`, tên `NGUYEN VAN A`, OTP `123456`.
 
 ---
 
