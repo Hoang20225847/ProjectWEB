@@ -1,0 +1,475 @@
+/* Trang /search — dùng hết chiều ngang wrapper (tới max-width .grid) */
+.searchPageRoot {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  padding: 16px 4px 36px;
+  box-sizing: border-box;
+}
+
+.searchPageRow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 20px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* Một panel duy nhất: danh mục + bộ lọc */
+.searchSidebar {
+  width: 100%;
+  max-width: 280px;
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 40%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  padding: 0;
+  font-size: 1.35rem;
+  align-self: flex-start;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 100px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.searchSidebarScroll {
+  overflow-y: auto;
+  padding: 16px 16px 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.panelHeaderIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.25), rgba(20, 184, 166, 0.12));
+  color: #0f766e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.panelHeaderText {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.panelHeaderSub {
+  margin: 2px 0 0;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.section {
+  margin-bottom: 18px;
+}
+
+.section:last-of-type {
+  margin-bottom: 8px;
+}
+
+.blockTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 10px;
+  color: #475569;
+}
+
+.catList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catBtn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  font: inherit;
+  font-size: 1.38rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  line-height: 1.35;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.catBtn:hover {
+  background: rgba(45, 212, 191, 0.12);
+  color: #0f766e;
+}
+
+.catBtnActive {
+  background: linear-gradient(90deg, rgba(45, 212, 191, 0.2), rgba(45, 212, 191, 0.06));
+  color: #0d9488;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 #14b8a6;
+}
+
+.catLink {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #334155;
+  text-decoration: none;
+  font-size: 1.38rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.catLink:hover {
+  background: rgba(45, 212, 191, 0.12);
+  color: #0f766e;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0 15%, #e2e8f0 85%, transparent);
+  margin: 6px 0 14px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #334155;
+  font-size: 1.32rem;
+  line-height: 1.4;
+  transition: background 0.12s ease;
+}
+
+.checkRow:hover {
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.checkRow input {
+  margin-top: 4px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #14b8a6;
+}
+
+.seeMore {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 0;
+  font-size: 1.22rem;
+  font-weight: 600;
+  color: #0d9488;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.seeMore:hover {
+  text-decoration: underline;
+}
+
+.actions {
+  padding: 12px 16px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.btnClear {
+  width: 100%;
+  height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #475569;
+  font-size: 1.32rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.btnClear:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.searchMain {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 12px 20px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+.searchEmpty {
+  margin: 24px 8px;
+  font-size: 1.45rem;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Thanh sắp xếp + hiển thị / trang */
+.searchToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  border-radius: 10px;
+}
+
+.searchToolbarLabel {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-right: 4px;
+}
+
+.searchToolbarSort {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.searchToolbarBtn {
+  height: 34px;
+  min-width: 0;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+  font-size: 1.32rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.searchToolbarBtn:hover {
+  border-color: #5eead4;
+  color: #fff;
+}
+
+.searchToolbarBtnActive {
+  background: rgba(45, 212, 191, 0.22);
+  border-color: #2dd4bf;
+  color: #5eead4;
+}
+
+.searchToolbarMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-left: auto;
+  font-size: 1.28rem;
+  color: #94a3b8;
+}
+
+.searchToolbarMeta strong {
+  color: #e2e8f0;
+  font-weight: 700;
+}
+
+.perPageSelect {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 1.28rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 8.5rem;
+}
+
+.perPageSelect:focus {
+  outline: 2px solid rgba(45, 212, 191, 0.45);
+  outline-offset: 1px;
+}
+
+.priceDropdownWrap {
+  position: relative;
+}
+
+.priceDropdownBtn {
+  height: 34px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 108px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+  font-size: 1.32rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.priceDropdownBtn:hover {
+  border-color: #5eead4;
+  color: #fff;
+}
+
+.priceDropdownBtn i {
+  font-size: 1.1rem;
+  opacity: 0.85;
+}
+
+.priceDropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 200px;
+  padding: 6px 0;
+  margin: 0;
+  list-style: none;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.priceDropdownMenu button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.priceDropdownMenu button:hover {
+  background: rgba(45, 212, 191, 0.12);
+  color: #5eead4;
+}
+
+.priceDropdownItemActive {
+  color: #2dd4bf !important;
+  font-weight: 700;
+}
+
+.searchPagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.paginationBtn {
+  min-width: 40px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  font-size: 1.32rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.paginationBtn:hover:not(:disabled) {
+  border-color: #14b8a6;
+  color: #0d9488;
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.paginationBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.paginationBtnActive {
+  background: linear-gradient(180deg, #14b8a6, #0d9488);
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.paginationEllipsis {
+  padding: 0 6px;
+  color: #94a3b8;
+  font-size: 1.4rem;
+  user-select: none;
+}
+
+@media (max-width: 960px) {
+  .searchPageRow {
+    flex-wrap: wrap;
+  }
+
+  .searchSidebar {
+    position: relative;
+    top: 0;
+    max-width: none;
+    max-height: none;
+    width: 100%;
+  }
+
+  .searchMain {
+    width: 100%;
+  }
+}

@@ -1,0 +1,674 @@
+/* Trang chủ phong cách dark / Waka */
+
+$bg: var(--bg-primary);
+$surface: var(--bg-card);
+$border: var(--border);
+$text: var(--text-primary);
+$muted: var(--text-secondary);
+$accent: var(--accent);
+$accent2: var(--accent-hover);
+$promo: #8b1538;
+
+.homeWaka {
+  width: 100%;
+  min-height: 60vh;
+  background: $bg;
+  color: $text;
+  padding-bottom: 48px;
+}
+
+/* Filter Bar - thanh lọc trong Home */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* Single Filter Button */
+.filterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 1.35rem;
+  color: $text;
+  white-space: nowrap;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover {
+    background: rgba(45, 212, 191, 0.15);
+    border-color: rgba(45, 212, 191, 0.55);
+  }
+}
+
+.filterBtnActive {
+  color: #0b1131;
+  font-weight: 700;
+  border-color: rgba(45, 212, 191, 0.85);
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.92), rgba(20, 184, 166, 0.88));
+  box-shadow: 0 2px 12px rgba(45, 212, 191, 0.35);
+}
+
+/* Filter Dropdown — mở bằng click (state), không dùng :hover để tránh panel biến mất khi di chuột */
+.filterDropdown {
+  position: relative;
+  z-index: 50;
+}
+
+.filterDropdownPanel {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  min-width: min(100vw - 32px, 420px);
+  max-width: calc(100vw - 24px);
+  z-index: 1000;
+  padding: 0;
+  background: transparent;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.55));
+}
+
+.filterDropdownOpen .filterDropdownPanel {
+  display: block;
+}
+
+.filterDropdownPanelInner {
+  max-height: min(72vh, 640px);
+  overflow-y: auto;
+  padding: 16px 16px 14px;
+  background: linear-gradient(180deg, #1a2238 0%, #12182c 100%);
+  border: 1px solid rgba(45, 212, 191, 0.22);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.filterPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(45, 212, 191, 0.12);
+}
+
+.filterPanelHeaderIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.6rem;
+  color: #0b1131;
+  background: linear-gradient(135deg, $accent, $accent2);
+  box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3);
+}
+
+.filterPanelHeaderText {
+  flex: 1;
+  min-width: 0;
+}
+
+.filterPanelTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $text;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.filterPanelSub {
+  margin: 0;
+  font-size: 1.2rem;
+  color: $muted;
+  line-height: 1.45;
+}
+
+.filterFieldsGrid {
+  display: grid;
+  gap: 12px 14px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .filterFieldsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.filterSpan2 {
+  grid-column: 1 / -1;
+}
+
+.filterHint {
+  font-size: 1.15rem;
+  color: rgba(148, 163, 184, 0.95);
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.filterCheckboxRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: rgba(45, 212, 191, 0.35);
+    background: rgba(45, 212, 191, 0.06);
+  }
+
+  input {
+    width: 18px;
+    height: 18px;
+    accent-color: $accent;
+    cursor: pointer;
+  }
+
+  span {
+    font-size: 1.3rem;
+    color: $text;
+  }
+
+  i {
+    margin-right: 6px;
+    color: $accent;
+  }
+}
+
+.filterGroup {
+  margin-bottom: 0;
+}
+
+.filterGroupLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.25rem;
+  color: $muted;
+  margin-bottom: 6px;
+}
+
+.filterGroupInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-primary) 74%, transparent);
+  color: $text;
+  outline: none;
+  &::placeholder {
+    color: $muted;
+  }
+  &:focus {
+    border-color: rgba(45, 212, 191, 0.5);
+  }
+}
+
+.filterGroupSelect {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-primary) 74%, transparent);
+  color: $text;
+  outline: none;
+  cursor: pointer;
+  &:focus {
+    border-color: rgba(45, 212, 191, 0.5);
+  }
+  option {
+    background: var(--bg-card);
+    color: $text;
+  }
+}
+
+.filterActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.filterApplyBtn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #0b1131;
+  background: linear-gradient(135deg, $accent, $accent2);
+  &:hover {
+    filter: brightness(1.06);
+  }
+}
+
+.filterResetBtn {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: $muted;
+  background: transparent;
+  &:hover {
+    color: $text;
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+/* Active filters display */
+.activeFilters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.activeFilterTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  background: rgba(45, 212, 191, 0.15);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: $accent;
+}
+
+.activeFilterTagRemove {
+  background: none;
+  border: none;
+  color: $accent;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  &:hover {
+    color: $text;
+  }
+}
+
+/* Home Navigation Bar — trong Header, dính sát hàng search */
+.homeNav {
+  position: relative;
+  top: auto;
+  z-index: 1;
+  background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  margin: 0;
+}
+
+.homeNavInner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.homeNavLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 1.3rem;
+  color: $muted;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  i {
+    font-size: 1.2rem;
+  }
+
+  &:hover {
+    color: $text;
+    background: rgba(45, 212, 191, 0.1);
+  }
+}
+
+.catStickyLinkActive {
+  color: $bg !important;
+  background: linear-gradient(135deg, $accent, $accent2);
+  font-weight: 600;
+}
+
+.catStickyAll {
+  color: $accent;
+  font-weight: 600;
+}
+
+/* Bộ lọc — dropdown nổi trên nội dung phía dưới */
+.filterWrap {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 5000;
+}
+
+.filterTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 1.4rem;
+  color: $muted;
+  white-space: nowrap;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.08);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  &:hover {
+    color: $text;
+    background: rgba(45, 212, 191, 0.15);
+    border-color: rgba(45, 212, 191, 0.55);
+  }
+}
+
+.filterWrap:focus-within .filterTrigger {
+  color: $text;
+  background: rgba(45, 212, 191, 0.15);
+  border-color: rgba(45, 212, 191, 0.55);
+}
+
+.filterPanel {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0;
+  min-width: min(320px, 92vw);
+  z-index: 5100;
+  padding: 22px 16px 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 92%, #151c3a) 0%, color-mix(in srgb, var(--bg-primary) 92%, #0f1528) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+}
+
+.filterWrap:hover .filterPanel,
+.filterWrap:focus-within .filterPanel {
+  display: block;
+}
+
+.filterRow {
+  margin-bottom: 14px;
+  label {
+    display: block;
+    font-size: 1.25rem;
+    color: $muted;
+    margin-bottom: 6px;
+  }
+}
+
+.filterSelect,
+.filterInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-primary) 74%, transparent);
+  color: $text;
+  outline: none;
+  &:focus {
+    border-color: rgba(45, 212, 191, 0.5);
+  }
+}
+
+.filterActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.filterBtnPrimary {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1.35rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #0b1131;
+  background: linear-gradient(135deg, $accent, $accent2);
+  &:hover {
+    filter: brightness(1.06);
+  }
+}
+
+.filterBtnSecondary {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: $muted;
+  background: transparent;
+  &:hover {
+    color: $text;
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+/* Hero carousel — z-index thấp để không đè thanh sticky + dropdown */
+.hero {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  margin: 16px 8px 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 110px;
+  height: 16vh;
+  max-height: 180px;
+  scroll-margin-top: calc(var(--header-height) + 52px);
+  background: radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(99, 102, 241, 0.2), transparent 45%), var(--bg-card);
+  border: 1px solid $border;
+}
+
+.heroInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 48px;
+  min-height: 110px;
+  height: 16vh;
+  max-height: 180px;
+}
+
+.heroSlide {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 720px;
+}
+
+.heroCover {
+  width: 70px;
+  height: 100px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  transform: perspective(400px) rotateY(-6deg);
+  transition: transform 0.3s;
+  &:hover {
+    transform: perspective(400px) rotateY(0deg) scale(1.02);
+  }
+}
+
+.heroNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  z-index: 2;
+  &:hover {
+    background: rgba(45, 212, 191, 0.25);
+  }
+}
+
+.heroNavPrev {
+  left: 12px;
+}
+.heroNavNext {
+  right: 12px;
+}
+
+.heroDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding-bottom: 16px;
+}
+
+.heroDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+  &.heroDotOn {
+    background: $accent;
+    transform: scale(1.2);
+  }
+}
+
+/* Section theo danh mục */
+.catSection {
+  margin: 0 8px 32px;
+  /* Anchor: dưới header sticky + thanh danh mục sticky */
+  scroll-margin-top: calc(var(--header-height) + 52px);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+
+.sectionTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: $text;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.sectionSub {
+  font-size: 1.3rem;
+  color: $muted;
+  margin: 4px 0 0;
+  font-weight: 400;
+}
+
+.sectionMore {
+  font-size: 1.3rem;
+  color: $accent;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Hàng sách cuộn ngang */
+.bookScroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 4px 8px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-secondary) 48%, transparent);
+    border-radius: 3px;
+  }
+}
+
+/* Paging line — theo từng hàng */
+.pagingTrack {
+  position: relative;
+  isolation: isolate;
+  height: 4px;
+  background: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+  border-radius: 2px;
+  margin: 4px 4px 0;
+  overflow: hidden;
+}
+
+.pagingThumb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, $accent, $accent2);
+  transition: width 0.08s linear, left 0.08s linear;
+}
+
+.emptyHint {
+  color: $muted;
+  font-size: 1.4rem;
+  padding: 16px;
+  text-align: center;
+}
+
+.loading {
+  color: $muted;
+  text-align: center;
+  padding: 48px;
+  font-size: 1.6rem;
+}

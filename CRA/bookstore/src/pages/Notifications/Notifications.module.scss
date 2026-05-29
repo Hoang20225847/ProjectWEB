@@ -1,0 +1,389 @@
+/* Trang thông báo — đồng bộ dark + teal với Profile / header */
+
+$accent: #2dd4bf;
+$accent2: #14b8a6;
+$panel: linear-gradient(165deg, #151c38 0%, #0f172a 55%, #0c1224 100%);
+$border: rgba(45, 212, 191, 0.2);
+$border-muted: rgba(148, 163, 184, 0.14);
+$text: #f1f5f9;
+$text-muted: #94a3b8;
+$text-dim: #64748b;
+$surface: rgba(30, 41, 59, 0.45);
+$surface-read: rgba(15, 23, 42, 0.65);
+$surface-unread: rgba(45, 212, 191, 0.1);
+
+.container {
+  padding: 20px 0;
+  min-height: calc(100vh - 200px);
+}
+
+.notifications-page {
+  background: $panel;
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 22px 22px 26px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid $border-muted;
+}
+
+.page-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: $text;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  border: 1px solid $border-muted;
+  background: rgba(255, 255, 255, 0.06);
+  color: $text-muted;
+}
+
+.action-btn:hover {
+  background: rgba(45, 212, 191, 0.12);
+  border-color: rgba(45, 212, 191, 0.35);
+  color: $text;
+}
+
+.action-btn.delete-btn {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.action-btn.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 1.3rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid $border-muted;
+  background: rgba(0, 0, 0, 0.2);
+  color: $text-muted;
+}
+
+.filter-tab:hover {
+  border-color: rgba(45, 212, 191, 0.35);
+  color: $text;
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, $accent, $accent2);
+  border-color: rgba(15, 23, 42, 0.25);
+  color: #0b1131;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(45, 212, 191, 0.35);
+}
+
+.loading,
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 16px;
+  color: $text-muted;
+  gap: 12px;
+  font-size: 1.4rem;
+}
+
+.loading i,
+.empty i {
+  font-size: 3.2rem;
+  color: rgba(45, 212, 191, 0.45);
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 14px 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  position: relative;
+  border: 1px solid $border-muted;
+  background: $surface-read;
+  border-left: 3px solid transparent;
+}
+
+.notification-item:hover {
+  border-color: rgba(45, 212, 191, 0.28);
+  background: rgba(30, 41, 59, 0.55);
+}
+
+/* Đã đọc — nền trầm, chữ dịu */
+.notification-item:not(.unread) .notification-title {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.notification-item:not(.unread) .notification-message {
+  color: $text-dim;
+}
+
+.notification-item:not(.unread) .notification-time {
+  color: $text-dim;
+}
+
+/* Chưa đọc — viền trái teal, nền nhấn, chữ sáng + nhãn */
+.notification-item.unread {
+  background: $surface-unread;
+  border-color: rgba(45, 212, 191, 0.35);
+  border-left: 4px solid $accent;
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.12), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.notification-item.unread .notification-title {
+  color: $text;
+  font-weight: 700;
+}
+
+.notification-item.unread .notification-message {
+  color: #cbd5e1;
+}
+
+.notification-item.unread .notification-time {
+  color: $text-muted;
+}
+
+.notification-item.unread:hover {
+  background: rgba(45, 212, 191, 0.14);
+  border-color: rgba(45, 212, 191, 0.5);
+}
+
+.unread-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(45, 212, 191, 0.2);
+  color: $accent;
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  margin-bottom: 6px;
+}
+
+.notification-image {
+  width: 52px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notification-type--cart {
+  color: #5eead4;
+  background: rgba(94, 234, 212, 0.1);
+  border-color: rgba(94, 234, 212, 0.25);
+}
+
+.notification-type--order {
+  color: #7dd3fc;
+  background: rgba(125, 211, 252, 0.1);
+  border-color: rgba(125, 211, 252, 0.25);
+}
+
+.notification-type--order_status {
+  color: #fcd34d;
+  background: rgba(252, 211, 77, 0.1);
+  border-color: rgba(252, 211, 77, 0.25);
+}
+
+.notification-type--payment {
+  color: #c4b5fd;
+  background: rgba(196, 181, 253, 0.1);
+  border-color: rgba(196, 181, 253, 0.25);
+}
+
+.notification-type--review {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+.notification-type--default {
+  color: $text-muted;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-book-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  background: rgba(45, 212, 191, 0.12);
+  padding: 3px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  border-left: 3px solid $accent;
+  color: #99f6e4;
+}
+
+.notification-title {
+  font-size: 1.55rem;
+  margin: 0 0 4px 0;
+  line-height: 1.35;
+}
+
+.notification-message {
+  font-size: 1.35rem;
+  margin: 0 0 6px 0;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notification-time {
+  font-size: 1.15rem;
+}
+
+.notification-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.notification-item:hover .notification-actions {
+  opacity: 1;
+}
+
+.action-icon {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: $text-muted;
+  transition: all 0.15s ease;
+}
+
+.action-icon:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid $border-muted;
+}
+
+.page-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid $border-muted;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  color: $text-muted;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, $accent, $accent2);
+  color: #0b1131;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(45, 212, 191, 0.35);
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 1.35rem;
+  color: $text-muted;
+}

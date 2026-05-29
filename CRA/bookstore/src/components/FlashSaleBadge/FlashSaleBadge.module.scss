@@ -1,0 +1,87 @@
+.badge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 6px 10px;
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(2px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.badgeLive {
+  background: linear-gradient(95deg, rgba(220, 38, 38, 0.95) 0%, rgba(249, 115, 22, 0.92) 100%);
+  animation: liveGlow 1.6s ease-in-out infinite;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 -4px 12px rgba(220, 38, 38, 0.45);
+}
+
+.badgeUpcoming {
+  background: linear-gradient(95deg, rgba(217, 119, 6, 0.94) 0%, rgba(245, 158, 11, 0.92) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 -4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.badgeInline {
+  position: relative;
+  border-radius: 10px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 1.2rem;
+  pointer-events: auto;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-size: 1.08rem;
+  white-space: nowrap;
+
+  i {
+    font-size: 1.05rem;
+  }
+}
+
+.discount {
+  background: rgba(255, 255, 255, 0.18);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.05rem;
+  white-space: nowrap;
+
+  i {
+    font-size: 1rem;
+    opacity: 0.92;
+  }
+}
+
+@keyframes liveGlow {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
+}

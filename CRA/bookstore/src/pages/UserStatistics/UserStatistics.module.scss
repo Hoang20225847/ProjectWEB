@@ -1,0 +1,180 @@
+.page {
+  padding: 24px;
+  color: var(--text-primary);
+}
+
+.title {
+  margin: 0;
+  font-size: 2.6rem;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 1.4rem;
+}
+
+.section {
+  margin-top: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.section h2 {
+  margin: 0 0 12px;
+  font-size: 1.8rem;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.kpiCard {
+  background: color-mix(in srgb, var(--bg-card) 86%, var(--bg-primary));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kpiLabel {
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+}
+
+.kpiValue {
+  font-size: 2.4rem;
+  color: var(--accent);
+}
+
+.kpiCard small {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.listCard {
+  background: color-mix(in srgb, var(--bg-card) 86%, var(--bg-primary));
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 140px 50px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.track {
+  width: 100%;
+  height: 8px;
+  background: color-mix(in srgb, var(--text-secondary) 24%, transparent);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #22c55e);
+}
+
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.monthItem {
+  background: color-mix(in srgb, var(--bg-card) 86%, var(--bg-primary));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.monthLabel {
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+}
+
+.monthTrack {
+  width: 32px;
+  height: 92px;
+  background: color-mix(in srgb, var(--text-secondary) 24%, transparent);
+  border-radius: 999px;
+  display: flex;
+  align-items: flex-end;
+  padding: 3px;
+}
+
+.monthFill {
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent), #0891b2);
+}
+
+.monthValue {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.smallGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.metricCard {
+  background: color-mix(in srgb, var(--bg-card) 86%, var(--bg-primary));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metricCard span {
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+}
+
+.metricCard strong {
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.muted {
+  margin-top: 8px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 992px) {
+  .kpiGrid,
+  .smallGrid {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+
+  .monthGrid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .row {
+    grid-template-columns: 1fr 50px;
+  }
+
+  .track {
+    grid-column: 1 / -1;
+  }
+}

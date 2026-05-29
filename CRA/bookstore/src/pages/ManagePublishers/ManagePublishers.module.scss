@@ -1,0 +1,77 @@
+.publisherPanel {
+  background: linear-gradient(180deg, #ffffff 0%, #fff7f0 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(249, 115, 22, 0.22);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  padding: 18px 18px 16px;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  margin: 0 0 14px;
+  font-size: 1.85rem;
+  color: #7c2d12;
+  font-weight: 900;
+}
+
+.createForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.tableWrap {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+}
+
+.table thead th {
+  background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%);
+  color: #fff7ed;
+  text-align: left;
+  padding: 12px 12px;
+  font-size: 1.2rem;
+}
+
+.table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 1.2rem;
+}
+
+.nameText {
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.loadingText {
+  margin: 0;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.emptyText {
+  margin: 0;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 1.35rem;
+  padding: 8px 0;
+}
+

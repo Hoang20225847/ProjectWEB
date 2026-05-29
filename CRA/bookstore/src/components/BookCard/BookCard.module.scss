@@ -1,0 +1,244 @@
+/* Thẻ sách — dùng biến theme (light/dark) */
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 14px;
+  padding: 8px 4px 16px;
+}
+
+.rootScroll {
+  flex: 0 0 162px;
+  scroll-snap-align: start;
+  width: 162px;
+}
+
+.rootGrid {
+  width: 100%;
+  min-width: 0;
+}
+
+.cardLink {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+  &:hover {
+    border-color: rgba(45, 212, 191, 0.5);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.cardImgWrap {
+  position: relative;
+  padding-top: 140%;
+  background: color-mix(in srgb, var(--bg-primary) 88%, #000);
+  flex-shrink: 0;
+}
+
+.cardImg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.badgeMember {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  & i {
+    font-size: 0.85rem;
+  }
+}
+
+.promoBadge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 8px 11px 10px 9px;
+  min-width: 4.6rem;
+  background: linear-gradient(145deg, #ef4444 0%, #b91c1c 100%);
+  color: #fff;
+  border-radius: 0 0 10px 0;
+  box-shadow: 0 3px 12px rgba(185, 28, 28, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-top: none;
+  border-left: none;
+  line-height: 1.05;
+}
+
+.promoPercent {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.promoLabel {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  opacity: 0.92;
+}
+
+.cardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 10px;
+  min-height: 0;
+}
+
+.cardTitle {
+  font-size: 1.28rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  line-height: 1.32;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.32em * 2);
+  letter-spacing: -0.01em;
+}
+
+/* Một dòng thống kê — không pill xếp dọc */
+.cardStats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 2px;
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.12rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.statItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.statIcon {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  color: var(--text-secondary);
+}
+
+.statIconRating {
+  font-size: 0.95rem;
+  color: #fbbf24;
+  opacity: 1;
+}
+
+.statIconStock {
+  font-size: 0.95rem;
+  color: #5eead4;
+  opacity: 0.95;
+}
+
+.statNum {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.12rem;
+}
+
+.statSuffix {
+  font-weight: 500;
+  font-size: 1.02rem;
+  color: var(--text-secondary);
+}
+
+.statSep {
+  color: rgba(148, 163, 184, 0.45);
+  padding: 0 5px;
+  font-weight: 300;
+  user-select: none;
+}
+
+.rootScroll .cardStats {
+  font-size: 1.05rem;
+}
+
+.rootScroll .statNum {
+  font-size: 1.05rem;
+}
+
+.rootScroll .statSuffix {
+  font-size: 0.96rem;
+}
+
+.cardFooter {
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.priceStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.discTag {
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--danger) 75%, white);
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  padding: 3px 8px;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.cardPrice {
+  font-size: 1.42rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.cardPriceOld {
+  font-size: 1.12rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}

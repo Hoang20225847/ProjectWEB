@@ -1,0 +1,103 @@
+.page {
+  padding: 16px 0 24px;
+}
+
+.header {
+  margin: 0 0 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #fee2e2 0%, #fff7ed 60%, #ffffff 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.title {
+  margin: 8px 0 4px;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #7f1d1d;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #7c2d12;
+}
+
+.loading,
+.empty {
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #f8fafc;
+  color: #475569;
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.saleList {
+  display: grid;
+  gap: 16px;
+}
+
+.saleSection {
+  border-radius: 14px;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  padding: 14px 14px 12px;
+}
+
+.saleHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.saleTitle {
+  margin: 0 0 2px;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #991b1b;
+}
+
+.saleDesc {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #7c2d12;
+}
+
+.saleMeta {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 1.2rem;
+  color: #7c2d12;
+  font-weight: 700;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+}
+
+.grid {
+  padding: 4px 2px 8px;
+}

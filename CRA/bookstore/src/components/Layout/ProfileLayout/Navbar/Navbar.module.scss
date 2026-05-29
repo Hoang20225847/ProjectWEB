@@ -1,0 +1,91 @@
+.Profile-nav {
+  padding-bottom: 100px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 12px 100px;
+  box-shadow: 0 8px 24px var(--shadow);
+}
+
+.Profile-nav-current {
+  display: flex;
+}
+
+.nav-avt {
+  height: 30px;
+  width: 30px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.container {
+  margin-top: 30px;
+}
+
+.nav-name {
+  font-size: 14px;
+  line-height: 16.8px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.change {
+  font-size: 1.4rem;
+  line-height: 1.7rem;
+  color: var(--text-secondary);
+}
+
+.change:hover {
+  cursor: pointer;
+  color: #2dd4bf;
+}
+
+.change-title {
+  margin-left: 3px;
+}
+
+.nav-info {
+  margin-left: 15px;
+}
+
+.Nav-list-name {
+  margin-left: 7px;
+  text-decoration: none;
+  color: var(--text-primary);
+  display: inline-block;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.Nav-list-title {
+  font-size: 1.4rem;
+  font-weight: 350;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.Nav-list-name:hover,
+.Nav-list-title:hover,
+.nav-item:hover {
+  cursor: pointer;
+  color: var(--primary-color);
+}
+
+.Nav-list {
+  margin-top: 30px;
+}
+
+.nav-item {
+  color: var(--text-primary);
+  display: block;
+  text-decoration: none;
+  list-style: none;
+  font-size: 1.4rem;
+  font-weight: 350;
+  padding: 4px 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
