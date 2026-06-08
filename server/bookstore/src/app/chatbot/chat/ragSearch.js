@@ -3,7 +3,7 @@ const { embedText } = require('../sync/embedder');
 const qdrant = require('../clients/qdrantClient');
 const config = require('../config');
 const searchBooks = require('../tools/searchBooks');
-const { promotionTemporalOk } = require('../sync/promotionVectorSync');
+const { promotionVisibleOk } = require('../sync/promotionVectorSync');
 
 /**
  * Phân nhánh retrieval theo kiểu câu hỏi (intent légers — trước LLM/router tool).
@@ -16,7 +16,7 @@ function classifyDomains(query) {
     );
 
   const faqKw =
-    /\b(?:giao\s*hàng|vận\s*chuyển|\bship\b|đổi\s*trả|hoàn\s*tiền|thanh\s*toán|\bcod\b|vnpay|momo|chính\s*sách|cách\s*(?:đặt|mua\s*hàng)|faq|liên\s*hệ|cửa\s*hàng\b|bao\s+lâu\s+(?:để\s+)?(?:nhận|giao))\b/i.test(
+    /\b(?:giao\s*hàng|vận\s*chuyển|\bship\b|đổi\s*trả|hoàn\s*tiền|thanh\s*toán|\bcod\b|momo|chính\s*sách|cách\s*(?:đặt|mua\s*hàng)|faq|liên\s*hệ|cửa\s*hàng\b|bao\s+lâu\s+(?:để\s+)?(?:nhận|giao))\b/i.test(
       lower,
     );
 
@@ -120,7 +120,7 @@ async function ragSearch(query) {
       filter: null,
       minScore: Math.max(0.05, config.rag.minScore * 0.55),
     });
-    promoHitsFiltered = ph.filter((h) => promotionTemporalOk(h.payload));
+    promoHitsFiltered = ph.filter((h) => promotionVisibleOk(h.payload));
     if (promoHitsFiltered.length) sources.promotion = 'vector';
     else if (ph.length) sources.promotion = 'stale_window';
     else sources.promotion = 'none';

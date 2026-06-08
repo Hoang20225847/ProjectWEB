@@ -56,6 +56,23 @@ async function ensureMembershipSeed() {
   return seedPromise;
 }
 
+async function resolveMemberTierDiscountPercent(account) {
+  if (!account?.isMember) return 0;
+  const spend = Math.max(0, Math.round(Number(account.totalSpentDong) || 0));
+  const tier = await pickTierBySpend(spend);
+  if (!tier) return 0;
+  const benefits = await loadBenefitOverrides(tier._id);
+  return applyBenefitOverrides(tier, benefits).discountPercent;
+}
+
+async function getMemberTierDiscountPercentForEmail(email) {
+  if (!email) return 0;
+  await ensureMembershipSeed();
+  const account = await AccountUser.findOne({
+    email: String(email).toLowerCase().trim(),
+  }).lean();
+  return resolveMemberTierDiscountPercent(account);
+}
 async function pickTierBySpend(totalSpentDong) {
   await ensureMembershipSeed();
   const spend = Math.max(0, Math.round(Number(totalSpentDong) || 0));
@@ -246,8 +263,8 @@ async function quoteCheckout(opts) {
     }
   }
 
-  let memberDiscountDong = Math.floor((goodsSubtotalDong * discountPercent) / 100);
-  let afterMember = Math.max(0, goodsSubtotalDong - memberDiscountDong);
+  let memberDiscountDong = 0;
+  const afterMember = goodsSubtotalDong;
 
   let voucherDiscountDong = 0;
   let voucherTitle = '';
@@ -555,6 +572,8 @@ async function decrementVoucherUse(code) {
 module.exports = {
   ensureMembershipSeed,
   pickTierBySpend,
+  resolveMemberTierDiscountPercent,
+  getMemberTierDiscountPercentForEmail,
   computeMembershipSpendProgress,
   quoteCheckout,
   registerMembership,

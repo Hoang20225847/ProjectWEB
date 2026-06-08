@@ -19,7 +19,7 @@ chatbot/
 ├── sync/
 │   ├── embedder.js            Re-export embedText
 │   ├── vectorSync.js          Book -> text chunk -> upsert Qdrant (whitelist field)
-│   └── bookWatcher.js         Change Stream Books -> vectorSync; fallback polling
+│   └── bookWatcher.js         Polling Books (updateAt) -> vectorSync
 ├── tools/
 │   ├── searchBooks.js         Filter status+stock, projection whitelist
 │   ├── getFlashSale.js        Cache TTL 60s
@@ -96,13 +96,14 @@ Cả 6 endpoint yêu cầu `req.user.role === 'admin'` (đã có sẵn từ midd
 
 ## Triển khai dev
 
-1. Copy `.env.example` -> `.env`, điền `CHATBOT_LLM_API_KEY` và `CHATBOT_EMBED_API_KEY`
-   (cùng key OpenAI là đủ).
+1. Trong `.env`, khai báo đủ (bắt buộc khi `CHATBOT_ENABLED=true`):
+   `CHATBOT_LLM_PROVIDER`, `CHATBOT_LLM_MODEL`, `CHATBOT_LLM_API_KEY`,
+   `CHATBOT_EMBED_PROVIDER`, `CHATBOT_EMBED_MODEL`, `CHATBOT_EMBED_API_KEY`, `CHATBOT_EMBED_DIM`.
+   Không có fallback OpenAI — thiếu biến thì module chatbot không mount.
 2. Bật Qdrant (docker): `docker run -p 6333:6333 qdrant/qdrant` — hoặc set `QDRANT_ENABLED=false`
    để chạy mà không có vector DB (sẽ fallback sang keyword search).
-3. Bật MongoDB ở chế độ replica set nếu muốn dùng Change Stream (đồng bộ realtime sách
-   sang vector). Không có replica set, bookWatcher tự chuyển sang polling mỗi 60s theo
-   `updateAt`.
+3. `bookWatcher` poll sách đổi mỗi 60s theo `updateAt` (khi Qdrant bật). Flash sale
+   sync lúc bootstrap + khi admin tạo/sửa/xóa qua API (không dùng MongoDB change stream).
 4. `npm start` — sweeper + watcher tự khởi động sau khi MongoDB connect.
 
 ## Trade-off / hạn chế hiện tại

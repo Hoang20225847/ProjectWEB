@@ -5,6 +5,7 @@ const AccountUser = require('../app/models/AccountUsers');
 const { isWebOrderableListing } = require('../app/utils/bookVisibility');
 const { getActiveFlashSaleMap } = require('../app/services/flashSaleService');
 const { afterOrderItemsSold } = require('../app/services/orderBookUpdate');
+const { discountedBookPriceVnd } = require('../app/utils/bookSalePricing');
 const {
   quoteCheckout,
   incrementVoucherUse,
@@ -13,6 +14,7 @@ const {
   releaseUserVoucher,
   consumeLoyaltyPoints,
   releaseLoyaltyPoints,
+  resolveMemberTierDiscountPercent,
 } = require('../app/services/membershipService');
 
 function listPriceVnd(raw) {
@@ -22,29 +24,21 @@ function listPriceVnd(raw) {
   return n >= 1000 ? n : n * 1000;
 }
 
-function discountedBookPriceVnd(book, { isMember = false, flashDiscountPercent = 0 } = {}) {
-  const base = listPriceVnd(book?.price);
-  if (book?.isMemberOnly && !isMember) return base;
-  const baseDisc = Number(book?.discount) || 0;
-  const flashDisc = Math.max(0, Number(flashDiscountPercent) || 0);
-  const discount = flashDisc > 0 ? flashDisc : baseDisc;
-  return Math.max(0, Math.ceil(base * (1 - discount / 100)));
-}
-
-const PAYMENT_METHOD_CODE = { cod: 0, vnpay: 1, momo: 2 };
+const PAYMENT_METHOD_CODE = { cod: 0, momo: 1 };
 
 /**
  * @param {object} body — email, items, address, salesChannel, voucherCode, redeemPoints
- * @param {{ paymentChannel: 'cod'|'vnpay'|'momo', deductInventory?: boolean }} opts
+ * @param {{ paymentChannel: 'cod'|'momo', deductInventory?: boolean }} opts
  */
 async function createCheckoutOrder(body, opts = {}) {
   const { paymentChannel = 'cod', deductInventory = paymentChannel === 'cod' } = opts;
   const { email, items, address, salesChannel, voucherCode, redeemPoints } = body;
 
   const account = await AccountUser.findOne({ email: String(email || '').toLowerCase().trim() })
-    .select('isMember')
+    .select('isMember totalSpentDong')
     .lean();
   const isMember = !!account?.isMember;
+  const memberTierDiscountPercent = isMember ? await resolveMemberTierDiscountPercent(account) : 0;
   const flashMap = await getActiveFlashSaleMap();
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -92,7 +86,11 @@ async function createCheckoutOrder(body, opts = {}) {
     }
     const flashMeta = flashMap.get(String(rawId));
     const flashDiscountPercent = flashMeta ? flashMeta.discountPercent : 0;
-    const unitPrice = discountedBookPriceVnd(b, { isMember, flashDiscountPercent });
+    const unitPrice = discountedBookPriceVnd(b, {
+      isMember,
+      flashDiscountPercent,
+      memberTierDiscountPercent,
+    });
     enrichedItems.push({
       bookId: new mongoose.Types.ObjectId(String(rawId)),
       quantity: Math.floor(qty),
@@ -179,7 +177,7 @@ async function createCheckoutOrder(body, opts = {}) {
   return { order: newOrder, enrichedItems, quote };
 }
 
-/** Hủy đơn online khi VNPay/MoMo thất bại — giải phóng voucher/điểm */
+/** Hủy đơn online khi MoMo thất bại — giải phóng voucher/điểm */
 async function cancelUnpaidOnlineOrder(order) {
   if (!order) return;
   if (order.status === 'Đã hủy') return;

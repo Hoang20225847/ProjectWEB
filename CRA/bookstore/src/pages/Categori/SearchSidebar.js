@@ -1,18 +1,7 @@
 import { Link } from 'react-router-dom';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './SearchSidebar.module.scss';
-import { BOOK_FORMAT_OPTIONS } from '../../utils/bookFormat.js';
-import {
-  PRICE_BAND_OPTIONS,
-  GENRE_FILTER_OPTIONS,
-  LANGUAGE_FILTER_OPTIONS,
-  SUPPLIER_FILTER_OPTIONS,
-  BRAND_FILTER_OPTIONS,
-  AGE_RANGE_OPTIONS,
-  MANUFACTURING_ORIGIN_OPTIONS,
-  BRAND_ORIGIN_OPTIONS,
-  COVER_COLOR_OPTIONS,
-} from './searchFilterConstants.js';
+import { RATING_FILTER_OPTIONS } from './searchFilterConstants.js';
 
 function getCsvSet(searchParams, key) {
   return new Set((searchParams.get(key) || '').split(',').map((s) => s.trim()).filter(Boolean));
@@ -65,7 +54,130 @@ function CheckboxBlock({ title, options, paramKey, searchParams, setSearchParams
   );
 }
 
-export default function SearchSidebar({ searchParams, setSearchParams, categories }) {
+function YearInputBlock({ searchParams, setSearchParams }) {
+  const urlYear = searchParams.get('year') || searchParams.get('years')?.split(',')[0]?.trim() || '';
+  const [draft, setDraft] = useState(urlYear);
+
+  useEffect(() => {
+    setDraft(urlYear);
+  }, [urlYear]);
+
+  const commitYear = useCallback(
+    (raw) => {
+      const trimmed = String(raw ?? '').trim();
+      setSearchParams(
+        (prev) => {
+          const n = new URLSearchParams(prev);
+          n.delete('years');
+          if (/^\d{4}$/.test(trimmed)) {
+            n.set('year', trimmed);
+          } else {
+            n.delete('year');
+          }
+          return n;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.blockTitle}>Năm xuất bản</h3>
+      <input
+        type="number"
+        className={styles.yearInput}
+        inputMode="numeric"
+        min={1900}
+        max={2100}
+        step={1}
+        placeholder="VD: 2024"
+        value={draft}
+        aria-label="Năm xuất bản"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => commitYear(draft)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitYear(draft);
+          }
+        }}
+      />
+    </section>
+  );
+}
+
+function RatingBlock({ searchParams, setSearchParams }) {
+  const current = searchParams.get('minRating') || '';
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.blockTitle}>Đánh giá</h3>
+      {RATING_FILTER_OPTIONS.map((opt) => (
+        <label key={opt.value} className={styles.checkRow}>
+          <input
+            type="checkbox"
+            checked={current === opt.value}
+            onChange={(e) =>
+              setSearchParams(
+                (prev) => {
+                  const n = new URLSearchParams(prev);
+                  if (e.target.checked) n.set('minRating', opt.value);
+                  else if (current === opt.value) n.delete('minRating');
+                  return n;
+                },
+                { replace: true }
+              )
+            }
+          />
+          <span>{opt.label}</span>
+        </label>
+      ))}
+    </section>
+  );
+}
+
+function ToggleRow({ title, label, paramKey, searchParams, setSearchParams }) {
+  const checked = searchParams.get(paramKey) === 'true';
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.blockTitle}>{title}</h3>
+      <label className={styles.checkRow}>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) =>
+            setSearchParams(
+              (prev) => {
+                const n = new URLSearchParams(prev);
+                if (e.target.checked) n.set(paramKey, 'true');
+                else n.delete(paramKey);
+                return n;
+              },
+              { replace: true }
+            )
+          }
+        />
+        <span>{label}</span>
+      </label>
+    </section>
+  );
+}
+
+const FILTER_BLOCKS = [
+  { key: 'priceBands', title: 'Giá', paramKey: 'priceBands' },
+  { key: 'genres', title: 'Thể loại nội dung', paramKey: 'genres' },
+  { key: 'brands', title: 'Thương hiệu', paramKey: 'brands' },
+  { key: 'suppliers', title: 'Nhà cung cấp / NXB', paramKey: 'suppliers' },
+  { key: 'manufacturingOrigins', title: 'Nơi gia công & sản xuất', paramKey: 'manufacturingOrigins' },
+  { key: 'brandOrigins', title: 'Xuất xứ thương hiệu', paramKey: 'brandOrigins' },
+  { key: 'ageRanges', title: 'Độ tuổi', paramKey: 'ageRanges' },
+  { key: 'coverColors', title: 'Màu sắc', paramKey: 'coverColors' },
+  { key: 'languages', title: 'Ngôn ngữ', paramKey: 'languages' },
+  { key: 'formats', title: 'Hình thức', paramKey: 'formats' },
+];
+
+export default function SearchSidebar({ searchParams, setSearchParams, categories, filterFacets }) {
   const activeSlug =
     searchParams.get('categorySlug') || searchParams.get('category') || '';
 
@@ -90,9 +202,15 @@ export default function SearchSidebar({ searchParams, setSearchParams, categorie
   const clearAll = () => {
     setSearchParams({}, { replace: true });
   };
-  const memberOnly = searchParams.get('memberOnly') === 'true';
 
-  const formatOpts = BOOK_FORMAT_OPTIONS.filter((o) => o.value);
+  const visibleBlocks = useMemo(
+    () =>
+      FILTER_BLOCKS.map((block) => ({
+        ...block,
+        options: Array.isArray(filterFacets?.[block.key]) ? filterFacets[block.key] : [],
+      })).filter((block) => block.options.length > 0),
+    [filterFacets]
+  );
 
   return (
     <aside className={styles.searchSidebar} aria-label="Danh mục và bộ lọc">
@@ -129,108 +247,48 @@ export default function SearchSidebar({ searchParams, setSearchParams, categorie
           </ul>
         </section>
 
-        <div className={styles.divider} />
+        {filterFacets == null && (
+          <p className={styles.panelHeaderSub} style={{ padding: '0 0.5rem' }}>
+            Đang tải bộ lọc…
+          </p>
+        )}
 
-      <CheckboxBlock
-        title="Giá"
-        options={PRICE_BAND_OPTIONS}
-        paramKey="priceBands"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
+        {filterFacets != null && <div className={styles.divider} />}
 
-      <CheckboxBlock
-        title="Thể loại nội dung"
-        options={GENRE_FILTER_OPTIONS}
-        paramKey="genres"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
+        <YearInputBlock searchParams={searchParams} setSearchParams={setSearchParams} />
 
-      <CheckboxBlock
-        title="Thương hiệu"
-        options={BRAND_FILTER_OPTIONS}
-        paramKey="brands"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
+        <RatingBlock searchParams={searchParams} setSearchParams={setSearchParams} />
 
-      <CheckboxBlock
-        title="Nhà cung cấp / NXB"
-        options={SUPPLIER_FILTER_OPTIONS}
-        paramKey="suppliers"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-
-      <CheckboxBlock
-        title="Nơi gia công & sản xuất"
-        options={MANUFACTURING_ORIGIN_OPTIONS}
-        paramKey="manufacturingOrigins"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-
-      <CheckboxBlock
-        title="Xuất xứ thương hiệu"
-        options={BRAND_ORIGIN_OPTIONS}
-        paramKey="brandOrigins"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-
-      <CheckboxBlock
-        title="Độ tuổi"
-        options={AGE_RANGE_OPTIONS}
-        paramKey="ageRanges"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-
-      <CheckboxBlock
-        title="Màu sắc"
-        options={COVER_COLOR_OPTIONS}
-        paramKey="coverColors"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-
-      <CheckboxBlock
-        title="Ngôn ngữ"
-        options={LANGUAGE_FILTER_OPTIONS}
-        paramKey="languages"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-
-      <CheckboxBlock
-        title="Hình thức"
-        options={formatOpts.map((o) => ({ value: o.value, label: o.label }))}
-        paramKey="formats"
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-      <section className={styles.section}>
-        <h3 className={styles.blockTitle}>Sách hội viên</h3>
-        <label className={styles.checkRow}>
-          <input
-            type="checkbox"
-            checked={memberOnly}
-            onChange={(e) =>
-              setSearchParams(
-                (prev) => {
-                  const n = new URLSearchParams(prev);
-                  if (e.target.checked) n.set('memberOnly', 'true');
-                  else n.delete('memberOnly');
-                  return n;
-                },
-                { replace: true }
-              )
-            }
+        {filterFacets?.hasPromotionalBooks && (
+          <ToggleRow
+            title="Khuyến mãi"
+            label="Chỉ hiện sách đang khuyến mãi"
+            paramKey="onSaleOnly"
+            searchParams={searchParams}
+            setSearchParams={setSearchParams}
           />
-          <span>Chỉ hiện sách hội viên</span>
-        </label>
-      </section>
+        )}
+
+        {visibleBlocks.map((block) => (
+          <CheckboxBlock
+            key={block.paramKey}
+            title={block.title}
+            options={block.options}
+            paramKey={block.paramKey}
+            searchParams={searchParams}
+            setSearchParams={setSearchParams}
+          />
+        ))}
+
+        {filterFacets?.hasMemberOnlyBooks && (
+          <ToggleRow
+            title="Sách hội viên"
+            label="Chỉ hiện sách hội viên"
+            paramKey="memberOnly"
+            searchParams={searchParams}
+            setSearchParams={setSearchParams}
+          />
+        )}
       </div>
 
       <div className={styles.actions}>

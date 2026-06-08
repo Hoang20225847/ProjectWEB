@@ -1,7 +1,6 @@
 
 import styles from './Checkout.module.scss'
 import classNames from 'classnames/bind'
-import vnpay from '../../components/assets/img/vnpay.png'
 import momo from '../../components/assets/img/momo.png'
 import cash from '../../components/assets/img/cash.png'
 
@@ -184,32 +183,21 @@ function Checkout() {
     }}
     else if (paymentMethod === 1) {
       try {
-        const paymentUrl = await axios.post('/payapi/VnPay', formData);
+        const paymentUrl = await axios.post('/payapi/Momo', formData);
         if (typeof paymentUrl === 'string' && paymentUrl.startsWith('http')) {
           if (from === 'cart') {
-            sessionStorage.setItem('checkout_vnpay_clear_cart', auth.user.email);
+            sessionStorage.setItem('checkout_momo_clear_cart', auth.user.email);
           }
           window.location.href = paymentUrl;
           return;
         }
-        toast.error('Không nhận được link thanh toán VNPay');
+        toast.error('Không nhận được link thanh toán MoMo');
       } catch (error) {
         const msg =
           error?.response?.data?.message ||
           error?.message ||
-          'Thanh toán VNPay thất bại';
+          'Thanh toán MoMo thất bại';
         toast.error(msg);
-      }
-    }
-     else if( paymentMethod===2){
-      try{
-        const res = await axios.post('/payapi/Momo',formData)
-         if(res) {
-            window.location.href = res;
-         }
-      }
-      catch(error){
-        toast.error('Thanh Toan that bai')
       }
     }
 
@@ -371,15 +359,8 @@ function Checkout() {
                           </label>
                           <br />
                           <label className={cx('payment-item')}>
-                            
-                            <input type="radio" name="my_radio_group" value="1" checked={paymentMethod===1} onChange={()=>{ setPayMentMethod(1)}} />
-                             <img className={cx('logo-payment')} src={vnpay} alt="" /> VNPay (sandbox demo)
-                          </label>
-                          <br />
-                          <label className={cx('payment-item')}>
-                            
-                            <input type="radio" name="my_radio_group" value="2" checked={paymentMethod===2 } onChange={()=>{ setPayMentMethod(2)}} />
-                             <img className={cx('logo-payment')} src={momo } /> MoMo
+                            <input type="radio" name="my_radio_group" value="1" checked={paymentMethod === 1} onChange={() => { setPayMentMethod(1); }} />
+                            <img className={cx('logo-payment')} src={momo} alt="MoMo" /> MoMo (sandbox demo)
                           </label>
                           </div>
                        

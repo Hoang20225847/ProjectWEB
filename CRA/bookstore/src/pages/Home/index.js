@@ -3,7 +3,7 @@ import { getBookList, getCategoryList } from '../../app/api/siteApi.js';
 import { categoryIdStr } from '../../utils/categoryUtils.js';
 import CategoryBookRow from './CategoryBookRow';
 import styles from './Home.module.scss';
-import { listPriceVnd } from '../../components/function/function.js';
+import { listPriceVnd, bookHasStorePromotion } from '../../components/function/function.js';
 import { BOOK_FORMAT_OPTIONS } from '../../utils/bookFormat.js';
 import FlashSaleSection from '../../components/FlashSaleSection/FlashSaleSection.js';
 
@@ -169,7 +169,7 @@ function Home() {
     }
 
     if (filters.onSaleOnly) {
-      result = result.filter((book) => Number(book.discount) > 0);
+      result = result.filter((book) => bookHasStorePromotion(book));
     }
 
     if (filters.memberOnlyOnly) {

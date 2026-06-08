@@ -15,7 +15,7 @@ function getMongoUri() {
   );
 }
 
-/** URL public của API (ảnh /uploads, VNPay return, avatar). */
+/** URL public của API (ảnh /uploads, callback MoMo, avatar). */
 function getPublicApiUrl() {
   const raw = (process.env.API_PUBLIC_URL || '').trim().replace(/\/$/, '');
   if (raw) return raw;

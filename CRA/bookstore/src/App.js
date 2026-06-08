@@ -8,6 +8,7 @@ import PrivateRoute from './routes/PrivateRoute'
 import AdminRoute from './routes/AdminRoute'
 import StorefrontGuard from './routes/StorefrontGuard'
 import GuestRoute from './routes/GuestRoute'
+import ChatbotHost from './components/Chatbot/ChatbotHost'
 //import Content from './Content'
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
             phone:res.user.phone || '',
             membershipTierSlug: res.user.membershipTierSlug || '',
             membershipTierName: res.user.membershipTierName || '',
+            membershipDiscountPercent: res.user.membershipDiscountPercent ?? 0,
             loyaltyPoints: res.user.loyaltyPoints ?? 0,
             totalSpentDong: res.user.totalSpentDong ?? 0,
             memberSince: res.user.memberSince || null,
@@ -131,6 +133,7 @@ function App() {
          })}
 
         </Routes>
+        <ChatbotHost />
       </div>
     </Router>
     

@@ -41,6 +41,15 @@ const navigate = useNavigate();
   // Nếu muốn gọi API để cập nhật backend:
   // await updateCartItem(auth.user.email, updatedData[idx]);
 }
+const allSelected = Boolean(data?.length && data.every((item) => item.selected));
+const someSelected = Boolean(data?.some((item) => item.selected));
+const handleToggleSelectAll = () => {
+  if (!data?.length) return;
+  const nextSelected = !allSelected;
+  const updatedData = data.map((item) => ({ ...item, selected: nextSelected }));
+  setData(updatedData);
+  updateCart(auth.user.email, updatedData);
+};
 const handleChangeQuantity=(idx,value)=>{
  const updatedData=[...data];
  if((updatedData[idx].quantity + value) < 1) return;
@@ -73,7 +82,16 @@ const handleCheckout= () =>{
         <div className={`${cx('cart-container')} `}>
               <div className={cx('nav-title')}>
                 <div className={cx('nav-info-selectall')}>
-                  <input className={cx('nav-box')} type="checkbox"  />
+                  <input
+                    className={cx('nav-box')}
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected && !allSelected;
+                    }}
+                    onChange={handleToggleSelectAll}
+                    disabled={!data?.length}
+                  />
                   <span className= "text-blur">Sản phẩm</span>
                 </div>
                 <div className={cx('nav-info-title')}>

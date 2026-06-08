@@ -106,7 +106,8 @@ async function axiosPostWith429Retry(postFn) {
  * Client LLM hỗ trợ:
  *  - provider = 'gemini'    -> Google Generative Language API (gemini-2.5-flash)
  *  - provider = 'anthropic' -> Anthropic Messages
- *  - provider = 'openai'    -> OpenAI-compatible /chat/completions (mặc định cho mọi gateway khác)
+ *  - provider = 'openai'    -> OpenAI-compatible /chat/completions
+ *  - provider = 'deepseek'  -> DeepSeek API (OpenAI-compatible)
  *
  * Tất cả nhận messages dạng OpenAI ([{role:'system'|'user'|'assistant', content}])
  * và TOOL_DEFINITIONS dạng OpenAI function-calling. Bên trong tự convert nếu cần.

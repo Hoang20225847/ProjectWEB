@@ -7,7 +7,13 @@ import ListItem from './ListItem';
 import CategoryBookRow from '../Home/CategoryBookRow';
 import { getBookDetail } from '../../app/api/DetailApi';
 import { getReviewBook } from '../../app/api/ReviewApi.js';
-import DiscountPrice, { formatVndDisplay, listPriceVnd, salePriceDisplayVnd } from '../../components/function/function.js';
+import DiscountPrice, {
+  formatVndDisplay,
+  listPriceVnd,
+  salePriceDisplayVnd,
+  resolveVisibleBookDiscountPercent,
+  resolvePayableBookDiscountPercent,
+} from '../../components/function/function.js';
 import { AuthContext } from '../../components/context/auth.context.js';
 import axios from '../../components/axios/axios.customize.js';
 import { toast } from 'react-toastify';
@@ -26,8 +32,6 @@ function Details() {
   const [authorPage, setAuthorPage] = useState(1);
   const [countreview, setCountReview] = useState(0);
   const [count, setcount] = useState(1);
-  const [formatBook, setFormatBook] = useState('paper');
-  const [contentMode, setContentMode] = useState('full');
   const [descExpanded, setDescExpanded] = useState(false);
   const [currentImage, setCurrentImage] = useState(null);
   const [showLightbox, setShowLightbox] = useState(false);
@@ -133,6 +137,18 @@ function Details() {
 
   const roundedStars = Math.min(5, Math.max(0, Math.round(Number(item?.evaluate) || 0)));
 
+  const isMember = !!auth?.user?.isMember;
+  const memberTierDiscountPercent = Number(auth?.user?.membershipDiscountPercent) || 0;
+  const visibleDiscount = useMemo(() => {
+    if (!item || typeof item !== 'object') return 0;
+    return resolveVisibleBookDiscountPercent(item, { isMember, memberTierDiscountPercent });
+  }, [item, isMember, memberTierDiscountPercent]);
+
+  const payableDiscount = useMemo(() => {
+    if (!item || typeof item !== 'object') return 0;
+    return resolvePayableBookDiscountPercent(item, { isMember, memberTierDiscountPercent });
+  }, [item, isMember, memberTierDiscountPercent]);
+
   const handleCart = async (event) => {
     event.preventDefault();
     const stockTierNow = item?.stockTier || 'unmanaged';
@@ -147,10 +163,7 @@ function Details() {
     const email = auth.user.email;
     const bookId = item._id;
     const quantity = count;
-    const isMemberOnlyBook = !!item?.isMemberOnly;
-    const isMember = !!auth?.user?.isMember;
-    const effectiveDiscount = isMemberOnlyBook && !isMember ? 0 : Number(item?.discount) || 0;
-    const price = DiscountPrice(item.price, effectiveDiscount);
+    const price = DiscountPrice(item.price, payableDiscount);
     const totalPrice = price * quantity;
     const formData = {
       email,
@@ -181,8 +194,8 @@ function Details() {
           {
             bookId: item,
             quantity: count,
-            price: DiscountPrice(item.price, effectiveDiscount),
-            totalPrice: DiscountPrice(item.price, effectiveDiscount) * count,
+            price: DiscountPrice(item.price, payableDiscount),
+            totalPrice: DiscountPrice(item.price, payableDiscount) * count,
           },
         ],
       },
@@ -207,6 +220,8 @@ function Details() {
           isMember: true,
           membershipTierSlug: response.membershipTierSlug || prev.user.membershipTierSlug || '',
           membershipTierName: response.membershipTierName || prev.user.membershipTierName || '',
+          membershipDiscountPercent:
+            response.membershipDiscountPercent ?? prev.user.membershipDiscountPercent ?? 0,
           loyaltyPoints: response.loyaltyPoints ?? prev.user.loyaltyPoints ?? 0,
           totalSpentDong: response.totalSpentDong ?? prev.user.totalSpentDong ?? 0,
           memberSince: response.memberSince ?? prev.user.memberSince ?? null,
@@ -245,10 +260,9 @@ function Details() {
 
   const listVnd = listPriceVnd(item.price);
   const isMemberOnlyBook = !!item?.isMemberOnly;
-  const isMember = !!auth?.user?.isMember;
-  const effectiveDiscount = isMemberOnlyBook && !isMember ? 0 : Number(item?.discount) || 0;
-  const saleDisplayVnd = salePriceDisplayVnd(item.price, effectiveDiscount);
-  const hasDiscount = effectiveDiscount > 0;
+  const saleDisplayVnd = salePriceDisplayVnd(item.price, payableDiscount);
+  const hasDiscount = visibleDiscount > 0;
+  const showMemberPromoOnly = isMemberOnlyBook && !isMember && visibleDiscount > 0 && payableDiscount === 0;
   const stockTier = item.stockTier || 'unmanaged';
   const blockPurchase = stockTier === 'outOfStock';
   const maxBuy =
@@ -273,7 +287,7 @@ function Details() {
           <div className={cx('coverCol')}>
             <div className={cx('coverFrame')} onClick={handleOpenLightbox}>
               {hasDiscount ? (
-                <span className={cx('coverBadge')}>Giảm {effectiveDiscount}%</span>
+                <span className={cx('coverBadge')}>Giảm {visibleDiscount}%</span>
               ) : null}
 
               {allImages.length > 1 && (
@@ -412,60 +426,24 @@ function Details() {
                   </dd>
                 </div>
               ) : null}
-              <div className={cx('metaRow')}>
-                <dt>Định dạng</dt>
-                <dd>Sách giấy · Giao tận nơi</dd>
-              </div>
             </dl>
 
-            <div className={cx('pillGroup')}>
-              <span className={cx('pillLabel')}>Chọn loại sách</span>
-              <div className={cx('pills')}>
-                <button
-                  type="button"
-                  className={cx('pill', formatBook === 'paper' && 'pillActive')}
-                  onClick={() => setFormatBook('paper')}
-                >
-                  Sách giấy
-                </button>
-                <button type="button" className={cx('pill', 'pillDisabled')} disabled title="Sắp ra mắt">
-                  Sách điện tử
-                </button>
-                <button type="button" className={cx('pill', 'pillDisabled')} disabled title="Sắp ra mắt">
-                  Sách nói
-                </button>
-              </div>
-            </div>
-
-            <div className={cx('pillGroup')}>
-              <span className={cx('pillLabel')}>Nội dung hiển thị</span>
-              <div className={cx('pills')}>
-                <button
-                  type="button"
-                  className={cx('pill', contentMode === 'full' && 'pillActive')}
-                  onClick={() => setContentMode('full')}
-                >
-                  Đầy đủ
-                </button>
-                <button
-                  type="button"
-                  className={cx('pill', contentMode === 'summary' && 'pillActive')}
-                  onClick={() => setContentMode('summary')}
-                >
-                  Tóm tắt
-                </button>
-              </div>
-            </div>
-
             <div className={cx('priceBlock')}>
-              {hasDiscount && (
+              {payableDiscount > 0 && (
                 <span className={cx('priceOld')}>{formatVndDisplay(listVnd)}</span>
               )}
-              <span className={cx('priceMain')}>{formatVndDisplay(saleDisplayVnd)}</span>
+              <span className={cx('priceMain')}>
+                {formatVndDisplay(payableDiscount > 0 ? saleDisplayVnd : listVnd)}
+              </span>
+              {showMemberPromoOnly && (
+                <span className={cx('priceOld')} style={{ marginLeft: 8 }}>
+                  Hội viên: {formatVndDisplay(salePriceDisplayVnd(item.price, visibleDiscount))}
+                </span>
+              )}
             </div>
-            {isMemberOnlyBook && !isMember && (
+            {showMemberPromoOnly && (
               <p style={{ margin: '0 0 8px', color: '#b45309', fontWeight: 600, fontSize: '0.95rem' }}>
-                Giá ưu đãi chỉ áp dụng cho tài khoản hội viên.
+                Giá ưu đãi {visibleDiscount}% chỉ áp dụng khi đăng ký hội viên.
               </p>
             )}
 
@@ -559,24 +537,16 @@ function Details() {
             Giới thiệu sách
           </h2>
           <div className={cx('descBody')}>
-            {contentMode === 'summary' ? (
-              <p>
-                {descPlain.length > 180
-                  ? `${descPlain.slice(0, 180).trim()}…`
-                  : descPlain || 'Đang cập nhật mô tả cho cuốn sách này.'}
-              </p>
-            ) : (
-              <p>
-                {descExpanded || !showDescToggle
-                  ? descPlain || 'Đang cập nhật mô tả cho cuốn sách này.'
-                  : `${descPlain.slice(0, descPreviewLen).trim()}…`}
-                {showDescToggle && (
-                  <button type="button" className={cx('descMore')} onClick={() => setDescExpanded((e) => !e)}>
-                    {descExpanded ? ' Thu gọn' : ' Xem thêm'}
-                  </button>
-                )}
-              </p>
-            )}
+            <p>
+              {descExpanded || !showDescToggle
+                ? descPlain || 'Đang cập nhật mô tả cho cuốn sách này.'
+                : `${descPlain.slice(0, descPreviewLen).trim()}…`}
+              {showDescToggle && (
+                <button type="button" className={cx('descMore')} onClick={() => setDescExpanded((e) => !e)}>
+                  {descExpanded ? ' Thu gọn' : ' Xem thêm'}
+                </button>
+              )}
+            </p>
           </div>
         </section>
 

@@ -1,7 +1,6 @@
 import Header from "./Header";
 import Sidebar from "./SideBar";
 import Footer from "./Footer";
-import Chatbot from "../../Chatbot";
 import HeroSlider from "../../HeroSlider";
 import { useLocation } from "react-router-dom";
 
@@ -35,7 +34,6 @@ function DefaultLayout({children}) {
         </div>
         </div>
         <Footer/>
-        <Chatbot />
     </div> );
 }
 

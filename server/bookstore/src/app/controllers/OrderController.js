@@ -11,6 +11,7 @@ const Book = require('../models/Books');
 const AccountUser = require('../models/AccountUsers');
 const { isWebOrderableListing } = require('../utils/bookVisibility');
 const { getActiveFlashSaleMap } = require('../services/flashSaleService');
+const { discountedBookPriceVnd } = require('../utils/bookSalePricing');
 const { createVietnameseRegex } = require('../../utils/vietnameseSearch');
 const {
   quoteCheckout,
@@ -21,6 +22,7 @@ const {
   consumeLoyaltyPoints,
   releaseLoyaltyPoints,
   onOrderCompleted,
+  resolveMemberTierDiscountPercent,
 } = require('../services/membershipService');
 
 /**
@@ -38,15 +40,6 @@ function listPriceVnd(raw) {
   const n = Number.parseInt(digits || '0', 10);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return n >= 1000 ? n : n * 1000;
-}
-
-function discountedBookPriceVnd(book, { isMember = false, flashDiscountPercent = 0 } = {}) {
-  const base = listPriceVnd(book?.price);
-  if (book?.isMemberOnly && !isMember) return base;
-  const baseDisc = Number(book?.discount) || 0;
-  const flashDisc = Math.max(0, Number(flashDiscountPercent) || 0);
-  const discount = flashDisc > 0 ? flashDisc : baseDisc;
-  return Math.max(0, Math.ceil(base * (1 - discount / 100)));
 }
 
 function normalizeText(v) {
@@ -184,9 +177,12 @@ class OrderController{
             const { email, items, address, salesChannel, voucherCode, redeemPoints } = req.body;
             console.log(req.body)
                 const account = await AccountUser.findOne({ email: String(email || '').toLowerCase().trim() })
-                  .select('isMember')
+                  .select('isMember totalSpentDong')
                   .lean();
                 const isMember = !!account?.isMember;
+                const memberTierDiscountPercent = isMember
+                  ? await resolveMemberTierDiscountPercent(account)
+                  : 0;
                 const flashMap = await getActiveFlashSaleMap();
                 let enrichedItems = items;
                 if (Array.isArray(items)) {
@@ -216,7 +212,11 @@ class OrderController{
                     }
                     const flashMeta = flashMap.get(String(rawId));
                     const flashDiscountPercent = flashMeta ? flashMeta.discountPercent : 0;
-                    const unitPrice = discountedBookPriceVnd(b, { isMember, flashDiscountPercent });
+                    const unitPrice = discountedBookPriceVnd(b, {
+                      isMember,
+                      flashDiscountPercent,
+                      memberTierDiscountPercent,
+                    });
                     enrichedItems.push({
                       bookId: new mongoose.Types.ObjectId(String(rawId)),
                       quantity: Math.floor(Number(it.quantity)) || 0,

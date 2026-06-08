@@ -1,5 +1,5 @@
 const AccountUser = require('../models/AccountUsers');
-const { registerMembership, cancelMembership } = require('../services/membershipService');
+const { registerMembership, cancelMembership, resolveMemberTierDiscountPercent } = require('../services/membershipService');
 const { sendResetPasswordLink } = require('../services/mailService');
 const bcrypt=require('bcrypt')
 const crypto = require('crypto');
@@ -74,6 +74,9 @@ class UserController{
                             EC:2,
                             EM:'EMAIL/PASSWORD Khong hop le'})
                         }else {
+                            const membershipDiscountPercent = existingUser.isMember
+                              ? await resolveMemberTierDiscountPercent(existingUser)
+                              : 0;
                             const payload={
                                 _id: existingUser._id,
                                 email:existingUser.email,
@@ -99,6 +102,7 @@ class UserController{
                             phone:existingUser.phone || '',
                             membershipTierSlug: existingUser.membershipTier?.slug || '',
                             membershipTierName: existingUser.membershipTier?.name || '',
+                            membershipDiscountPercent,
                             loyaltyPoints: existingUser.loyaltyPoints || 0,
                             totalSpentDong: existingUser.totalSpentDong || 0,
                             memberSince: existingUser.memberSince || null,
@@ -265,11 +269,13 @@ class UserController{
             const r = await registerMembership(em);
             if (!r.ok) return res.status(404).json({ message: r.message });
             const account = await AccountUser.findOne({ email: em }).populate('membershipTier');
+            const membershipDiscountPercent = await resolveMemberTierDiscountPercent(account);
             return res.status(200).json({
               message: 'Đăng ký hội viên thành công',
               isMember: account.isMember,
               membershipTierSlug: account.membershipTier?.slug || '',
               membershipTierName: account.membershipTier?.name || '',
+              membershipDiscountPercent,
               loyaltyPoints: account.loyaltyPoints || 0,
               totalSpentDong: account.totalSpentDong || 0,
               memberSince: account.memberSince || null,

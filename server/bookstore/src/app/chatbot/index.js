@@ -1,10 +1,9 @@
 const config = require('./config');
+const validateChatbotConfig = config.validateChatbotConfig;
 const routes = require('./routes');
 const lifecycle = require('./services/sessionLifecycle');
 const { bootstrapVectors } = require('./bootstrapVectors');
 const { startBookWatcher, stopBookWatcher } = require('./sync/bookWatcher');
-const { startPromotionWatcher, stopPromotionWatcher } = require('./sync/promotionWatcher');
-const { startReviewWatcher, stopReviewWatcher } = require('./sync/reviewWatcher');
 
 /**
  * Bootstrap module chatbot: gắn router + khởi động background jobs.
@@ -15,26 +14,32 @@ function initChatbot(app, { mountPath = '/api/chatbot' } = {}) {
     console.log('[chatbot] disabled via env.');
     return;
   }
+
+  const validation = validateChatbotConfig();
+  if (!validation.ok) {
+    console.error('[chatbot] Cấu hình .env không đủ — module không được mount:');
+    for (const err of validation.errors) console.error(`  · ${err}`);
+    return;
+  }
+
+  console.log(
+    `[chatbot] LLM: ${config.llm.provider}/${config.llm.model} | Embed: ${config.embedding.provider}/${config.embedding.model} (dim=${config.embedding.dim})`,
+  );
+
   app.use(mountPath, routes);
   lifecycle.startIdleSweeper();
   bootstrapVectors().catch((err) => console.error('[chatbot.bootstrapVectors]', err?.message || err));
-  startBookWatcher().catch((err) => {
+  try {
+    startBookWatcher();
+  } catch (err) {
     console.error('[chatbot.init] bookWatcher failed:', err?.message || err);
-  });
-  startPromotionWatcher().catch((err) => {
-    console.error('[chatbot.init] promotionWatcher failed:', err?.message || err);
-  });
-  startReviewWatcher().catch((err) => {
-    console.error('[chatbot.init] reviewWatcher failed:', err?.message || err);
-  });
+  }
   console.log(`[chatbot] mounted at ${mountPath}`);
 }
 
 function shutdownChatbot() {
   lifecycle.stopIdleSweeper();
   stopBookWatcher();
-  stopPromotionWatcher();
-  stopReviewWatcher();
 }
 
-module.exports = { initChatbot, shutdownChatbot, config };
+module.exports = { initChatbot, shutdownChatbot, config, validateChatbotConfig };

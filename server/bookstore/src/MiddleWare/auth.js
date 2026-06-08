@@ -34,7 +34,6 @@ const auth = (req, res, next) => {
     '/api/address',
     '/admin/login',
     '/uploads',
-    '/payapi/check-payment-vnpay',
     '/api/review',
   ];
 
@@ -44,6 +43,7 @@ const auth = (req, res, next) => {
     req.method === 'GET' &&
     (req.path === '/api/books' ||
       req.path === '/api/books/filter' ||
+      req.path === '/api/books/filter-facets' ||
       req.path === '/api/books/search' ||
       req.path === '/api/books/detail');
   const isPublicFlashSaleRead =

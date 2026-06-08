@@ -60,6 +60,15 @@ function withStatus(saleDoc, now = new Date()) {
   return obj;
 }
 
+function syncPromotionVectorAsync(saleId) {
+  try {
+    const { syncFlashSaleById } = require('../chatbot/sync/promotionVectorSync');
+    syncFlashSaleById(String(saleId)).catch((err) => {
+      console.warn('[flashsale] vector sync failed:', err?.message || err);
+    });
+  } catch (_e) {}
+}
+
 class FlashSaleController {
   /** Admin: list toàn bộ flash sale (có populate sách) */
   async adminList(req, res) {
@@ -105,6 +114,7 @@ class FlashSaleController {
         active: active !== false,
       });
       const populated = await FlashSale.findById(created._id).populate(ITEMS_BOOK_POPULATE);
+      syncPromotionVectorAsync(created._id);
       return res.status(201).json(withStatus(populated));
     } catch (e) {
       return res.status(500).json({ message: 'Tạo flash sale thất bại', error: String(e.message) });
@@ -149,6 +159,7 @@ class FlashSaleController {
       if (active !== undefined) sale.active = !!active;
       await sale.save();
       const populated = await FlashSale.findById(sale._id).populate(ITEMS_BOOK_POPULATE);
+      syncPromotionVectorAsync(sale._id);
       return res.status(200).json(withStatus(populated));
     } catch (e) {
       return res.status(500).json({ message: 'Cập nhật flash sale thất bại', error: String(e.message) });

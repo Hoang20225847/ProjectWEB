@@ -41,7 +41,8 @@ const TOOL_DEFINITIONS = [
     type: 'function',
     function: {
       name: 'getFlashSale',
-      description: 'Lấy các chương trình flash sale đang chạy và danh sách sách kèm giá sale.',
+      description:
+        'Lấy flash sale đang chạy (sales) và sắp diễn ra trong vài ngày tới (upcomingSales), kèm sách và giá sale. Dùng khi user hỏi flash sale, giờ vàng, KM sắp tới.',
       parameters: { type: 'object', properties: {} },
     },
   },

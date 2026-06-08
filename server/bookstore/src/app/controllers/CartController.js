@@ -4,6 +4,9 @@ const Book= require('../models/Books')
 const { createNotificationHelper } = require('./NotificationController');
 const { isWebOrderableListing, computeStockTier } = require('../utils/bookVisibility');
 const { listPriceVndFromBookPrice } = require('../utils/moneyVnd');
+const { discountedBookPriceVnd } = require('../utils/bookSalePricing');
+const { getActiveFlashSaleMap } = require('../services/flashSaleService');
+const { resolveMemberTierDiscountPercent } = require('../services/membershipService');
 
 function managedStockNumber(book) {
   if (!book || book.stock === undefined || book.stock === null) return null;
@@ -11,25 +14,30 @@ function managedStockNumber(book) {
   return Number.isFinite(n) ? n : null;
 }
 
-function listPriceVnd(raw) {
-  return listPriceVndFromBookPrice(raw);
+async function getCartPricingContext(email) {
+  const account = await AccountUser.findOne({ email: String(email || '').toLowerCase().trim() })
+    .select('isMember totalSpentDong')
+    .lean();
+  const isMember = !!account?.isMember;
+  const memberTierDiscountPercent = isMember ? await resolveMemberTierDiscountPercent(account) : 0;
+  const flashMap = await getActiveFlashSaleMap();
+  return { isMember, memberTierDiscountPercent, flashMap };
 }
 
-function discountedBookPriceVnd(book, { isMember = false } = {}) {
-  const base = listPriceVnd(book?.price);
-  if (book?.isMemberOnly && !isMember) return base;
-  const discount = Number(book?.discount) || 0;
-  return Math.max(0, Math.ceil(base * (1 - discount / 100)));
+function unitPriceForBook(book, ctx) {
+  const flashMeta = ctx.flashMap.get(String(book._id));
+  return discountedBookPriceVnd(book, {
+    isMember: ctx.isMember,
+    memberTierDiscountPercent: ctx.memberTierDiscountPercent,
+    flashDiscountPercent: flashMeta?.discountPercent || 0,
+  });
 }
 
 /**
  * @returns {{ removedFromCart: Array, newItems: Array, dirty: boolean }}
  */
 async function sanitizeCartLines(cart) {
-  const account = await AccountUser.findOne({ email: String(cart.email || '').toLowerCase().trim() })
-    .select('isMember')
-    .lean();
-  const isMember = !!account?.isMember;
+  const ctx = await getCartPricingContext(cart.email);
   const removedFromCart = [];
   const newItems = [];
   let dirty = false;
@@ -71,7 +79,7 @@ async function sanitizeCartLines(cart) {
 
     const stockNum = managedStockNumber(book);
     let qty = Math.max(0, Number(line.quantity) || 0);
-    const price = discountedBookPriceVnd(book, { isMember });
+    const price = unitPriceForBook(book, ctx);
     const oldPrice = Number(line.price) || 0;
 
     if (stockNum !== null && qty > stockNum) {
@@ -148,10 +156,8 @@ class CartController{
                 }
 
                 const addQty = Math.max(1, Number(items.quantity) || 1);
-                const account = await AccountUser.findOne({ email: String(email || '').toLowerCase().trim() })
-                    .select('isMember')
-                    .lean();
-                const unitPrice = discountedBookPriceVnd(book, { isMember: !!account?.isMember });
+                const ctx = await getCartPricingContext(email);
+                const unitPrice = unitPriceForBook(book, ctx);
                 const existingCart = await Cart.findOne({ email });
                 const stockNum = managedStockNumber(book);
                 if (stockNum !== null) {

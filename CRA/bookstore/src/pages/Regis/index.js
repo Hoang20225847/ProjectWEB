@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Validator from '../../components/function/Validator';
 import { toast } from 'react-toastify';
+import API_BASE_URL from '../../config/api';
 
 function RegisterPage() {
   const handleRegis = async (data) => {
@@ -15,7 +16,7 @@ function RegisterPage() {
       password: data.password,
     };
     try {
-      const response = await fetch('/regis', {
+      const response = await fetch(`${API_BASE_URL}/regis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

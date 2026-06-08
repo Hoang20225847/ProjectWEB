@@ -1,90 +1,31 @@
-# Deploy BookStore — Vercel + Render + MongoDB Atlas (miễn phí)
+# Deploy BookStore — Localhost (Production Mode)
 
-## Kiến trúc
+Tài liệu này mô tả hai môi trường chạy của dự án:
 
-| Thành phần | Nền tảng | Dev local |
-|------------|----------|-----------|
-| React (`CRA/bookstore`) | **Vercel** | `npm start` → :3000 |
-| API (`server/bookstore`) | **Render** | `npm start` → :3001 |
-| MongoDB | **Atlas M0** | `mongodb://localhost:27017/book_store` |
+| Môi trường | Mục đích | Lệnh chính |
+|------------|----------|------------|
+| **Dev** | Đang code, hot reload | `npm start` (cả hai phía) |
+| **Production localhost** | Demo, bảo vệ đồ án | `start:local-prod` + build + `serve:local` |
 
 ---
 
-## 1. MongoDB Atlas (M0 free)
+## Kiến trúc hệ thống
 
-1. Tạo cluster **M0** tại [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas).
-2. Database Access → user + password.
-3. Network Access → **Allow access from anywhere** (`0.0.0.0/0`) hoặc IP Render khi biết.
-4. Connect → lấy connection string, thay `<password>`:
-   ```
-   mongodb+srv://USER:PASS@cluster0.xxxxx.mongodb.net/book_store?retryWrites=true&w=majority
-   ```
-
-**Import dữ liệu local (tuỳ chọn):**
-
-```bash
-mongodump --db book_store --out ./dump
-mongorestore --uri "mongodb+srv://..." ./dump/book_store
+```
+Trình duyệt
+    │
+    ├── http://localhost:3000  ←  React (bản build tĩnh, serve bằng serve)
+    │
+    └── http://localhost:3001  ←  Express API (NODE_ENV=production)
+                                       │
+                                       ├── MongoDB local (book_store)
+                                       ├── Qdrant Cloud (QDRANT_URL trong .env)
+                                       └── API bên ngoài (LLM, SMTP, MoMo sandbox)
 ```
 
 ---
 
-## 2. Render — API backend
-
-1. [render.com](https://render.com) → **New +** → **Web Service** → connect GitHub repo.
-2. Cấu hình:
-
-   | Field | Value |
-   |-------|--------|
-   | Root Directory | `server/bookstore` |
-   | Build Command | `npm install` |
-   | Start Command | `npm run start:prod` |
-   | Health Check Path | `/health` |
-
-3. **Environment Variables** (bắt buộc):
-
-   | Biến | Ví dụ |
-   |------|--------|
-   | `NODE_ENV` | `production` |
-   | `MONGODB_URI` | chuỗi Atlas ở trên |
-   | `CLIENT_BASE_URL` | `https://your-app.vercel.app` |
-   | `API_PUBLIC_URL` | `https://bookstore-api.onrender.com` (URL Render sau deploy) |
-   | `CORS_ORIGINS` | `https://your-app.vercel.app` |
-
-4. Copy toàn bộ biến chatbot/Qdrant/SMTP từ `.env` local (không commit `.env` lên Git).
-
-5. Deploy → mở `https://xxx.onrender.com/health` → `{"ok":true,"mongo":true}`.
-
-**Lưu ý free tier:** server ngủ sau ~15 phút; lần đầu wake ~30–60s.  
-**Upload ảnh:** mỗi redeploy có thể mất file trong `uploads` — backup hoặc dùng Cloudinary sau.
-
----
-
-## 3. Vercel — Frontend
-
-1. [vercel.com](https://vercel.com) → Import Git repo.
-2. Cấu hình:
-
-   | Field | Value |
-   |-------|--------|
-   | Root Directory | `CRA/bookstore` |
-   | Framework | Create React App |
-   | Build Command | `npm run build` |
-   | Output Directory | `build` |
-
-3. **Environment Variables:**
-
-   | Biến | Value |
-   |------|--------|
-   | `REACT_APP_API_URL` | URL Render API (không slash cuối), vd `https://bookstore-api.onrender.com` |
-
-4. Deploy. File `public/vercel.json` đã cấu hình SPA rewrite (React Router).
-
-5. Quay lại Render → cập nhật `CLIENT_BASE_URL` và `CORS_ORIGINS` đúng URL Vercel → Redeploy API.
-
----
-
-## 4. Dev local (không đổi thói quen)
+## 1. Môi trường Dev (hàng ngày, đang code)
 
 **Terminal 1 — API:**
 
@@ -93,50 +34,175 @@ cd server/bookstore
 npm start
 ```
 
-**Terminal 2 — Web:**
+**Terminal 2 — Frontend:**
 
 ```bash
 cd CRA/bookstore
 npm start
 ```
 
+- Hot reload, nodemon — thay đổi code thấy ngay
+- Không cần build
 - `CRA/bookstore/.env.development` → `REACT_APP_API_URL=http://localhost:3001`
-- Mongo local: không set `MONGODB_URI` → dùng `mongodb://localhost:27017/book_store`
+- MongoDB local: không set `MONGODB_URI` → dùng `mongodb://localhost:27017/book_store`
 
 ---
 
-## 5. VNPay (sandbox demo)
+## 2. Môi trường Production Localhost (demo / bảo vệ đồ án)
 
-**Local:** Return URL = `http://localhost:3001/payapi/check-payment-vnpay` (tự dùng khi `API_PUBLIC_URL` trống).
+### 2.1 Cài dependencies lần đầu
 
-**Deploy:**
+```bash
+cd server/bookstore
+npm install
 
-- `API_PUBLIC_URL` = URL Render (API).
-- `CLIENT_BASE_URL` = URL Vercel (frontend).
-- Cổng VNPay sandbox — IPN/Return: `https://<api-host>/payapi/check-payment-vnpay`
-- Tuỳ chọn env: `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_HOST`
+cd ../../CRA/bookstore
+npm install
+```
 
-**Test sandbox:** Checkout → chọn **VNPay** → thanh toán trên `sandbox.vnpayment.vn` → quay về `/profile/purchase?payment=success&method=vnpay`.
+### 2.2 Chuẩn bị dữ liệu demo (làm 1 lần)
 
-Thẻ demo (tham khảo tài liệu VNPay): Ngân hàng NCB, số thẻ `9704198526191432198`, tên `NGUYEN VAN A`, OTP `123456`.
+Khi DB đã có đầy đủ sách, tài khoản, voucher, flash sale — export để dùng lại:
+
+```bash
+mongodump --db book_store --out ./dump-demo
+```
+
+Trước ngày bảo vệ, restore dữ liệu sạch:
+
+```bash
+mongorestore --drop --dir ./dump-demo/book_store --db book_store
+```
+
+### 2.3 Build frontend (làm 1 lần, hoặc khi sửa code)
+
+```bash
+cd CRA/bookstore
+npm run build
+```
+
+- Đọc `CRA/bookstore/.env.production` → `REACT_APP_API_URL=http://localhost:3001`
+- Output: folder `CRA/bookstore/build/`
+
+### 2.4 Chạy hệ thống production
+
+**Terminal 1 — API (production mode):**
+
+```bash
+cd server/bookstore
+npm run start:local-prod
+```
+
+Log khởi động sẽ có:
+```
+Kết nối MongoDB thành công! (production)
+API listening on port 3001
+```
+
+Kiểm tra: mở `http://localhost:3001/health` → `{"ok":true,"mongo":true}`
+
+**Terminal 2 — Frontend (bản build):**
+
+```bash
+cd CRA/bookstore
+npm run serve:local
+```
+
+Mở trình duyệt: `http://localhost:3000`
+
+> **Lưu ý:** `serve:local` phục vụ bản build tối ưu hoá, không có hot reload.  
+> Nếu sửa code, cần `npm run build` lại rồi `npm run serve:local` lại.
+
+### 2.5 Khác biệt so với Dev
+
+| | Dev (`npm start`) | Production localhost |
+|---|---|---|
+| Frontend | Dev server, hot reload | Bản build tĩnh |
+| Backend | `nodemon`, auto restart | `node`, không restart tự động |
+| `NODE_ENV` | không set (undefined) | `production` |
+| CORS | Chấp nhận mọi origin | Chỉ `localhost:3000` |
+| Debug overlay | Có | Không |
 
 ---
 
-## 6. Checklist sau deploy
+## 3. Cấu hình môi trường
 
-- [ ] Đăng nhập / đăng ký
-- [ ] Ảnh sách / hero (URL trỏ Render `/uploads/...`)
-- [ ] Chatbot (DeepSeek + Qdrant env trên Render)
-- [ ] VNPay sandbox
-- [ ] Không commit `.env` — dùng Vercel/Render Dashboard
+### Backend — `server/bookstore/.env`
+
+File này đã có sẵn trên máy phát triển (không commit lên Git). Với production localhost, các biến quan trọng:
+
+```env
+# Giữ localhost — không cần URL public
+CLIENT_BASE_URL=http://localhost:3000
+
+# MongoDB local (không cần MONGODB_URI → dùng mặc định)
+# MONGODB_URI=mongodb://localhost:27017/book_store
+
+# Chatbot, Qdrant, SMTP — giữ nguyên như dev
+```
+
+Không cần `MONGODB_URI` nếu dùng Mongo local mặc định.  
+Không cần `API_PUBLIC_URL` nếu không cần callback MoMo từ ngoài (xem mục 4).
+
+### Frontend — `CRA/bookstore/.env.production`
+
+```env
+REACT_APP_API_URL=http://localhost:3001
+```
+
+Biến này được nhúng vào bundle **lúc build**, không đổi sau khi serve.
 
 ---
 
-## File đã chuẩn bị trong repo
+## 4. MoMo Sandbox
 
-- `CRA/bookstore/src/config/api.js` — `REACT_APP_API_URL`
-- `CRA/bookstore/.env.development` — dev local
-- `CRA/bookstore/public/vercel.json` — SPA routing
-- `server/bookstore/src/config/appConfig.js` — Mongo, CORS, public API URL
-- `server/bookstore/render.yaml` — blueprint Render (tuỳ chọn)
-- `server/bookstore` — `GET /health`, `npm run start:prod`
+**Lưu ý về IPN callback:** MoMo gọi callback về `ipnUrl` để xác nhận thanh toán. Khi chạy localhost, MoMo không thể gọi về `http://localhost:3001` từ server của họ.
+
+Ảnh hưởng thực tế khi demo:
+
+| Bước | Có hoạt động? |
+|------|--------------|
+| Tạo đơn + lấy link thanh toán MoMo | Có |
+| Mở trang `test-payment.momo.vn`, thanh toán | Có |
+| Redirect về `/profile/purchase?payment=success` | Có |
+| IPN callback (xác nhận trạng thái đơn từ MoMo server) | **Không** (cần URL public) |
+
+**Cách demo:** chọn COD cho demo chính; MoMo demo ở mức tạo link + redirect.  
+Trong báo cáo ghi: *"MoMo sandbox được tích hợp; IPN callback hoạt động đầy đủ khi triển khai trên server có domain public."*
+
+---
+
+## 5. Checklist trước ngày bảo vệ
+
+```
+Môi trường
+  [ ] MongoDB đang chạy (mongod service hoặc chạy tay)
+  [ ] npm install hoàn tất cả hai phía
+  [ ] npm run build đã chạy, folder build/ tồn tại
+
+Dữ liệu
+  [ ] Có sách với ảnh (uploads/ không trống)
+  [ ] Có tài khoản user demo và admin demo
+  [ ] Có voucher / flash sale để demo
+
+Kiểm thử end-to-end
+  [ ] http://localhost:3001/health → {"ok":true,"mongo":true}
+  [ ] http://localhost:3000 load được trang chủ, ảnh hiện
+  [ ] Đăng nhập / đăng ký
+  [ ] Thêm giỏ → Checkout COD → Đơn hàng xuất hiện
+  [ ] Chatbot phản hồi (cần internet tới Qdrant/LLM)
+  [ ] F5 trên trang con (vd /details/...) không bị 404
+  [ ] Admin đăng nhập → quản lý sách / thống kê
+```
+
+---
+
+## 6. File cấu hình liên quan
+
+| File | Mục đích |
+|------|----------|
+| `CRA/bookstore/.env.development` | API URL cho `npm start` (dev) |
+| `CRA/bookstore/.env.production` | API URL cho `npm run build` (production localhost) |
+| `server/bookstore/.env` | Tất cả biến backend (chatbot, SMTP, Qdrant…) |
+| `server/bookstore/src/config/appConfig.js` | Đọc PORT, MONGODB\_URI, CORS, API\_PUBLIC\_URL |
+| `CRA/bookstore/src/config/api.js` | Đọc `REACT_APP_API_URL`, giải quyết URL ảnh |

@@ -122,6 +122,16 @@
   width: 44px;
   height: 44px;
   object-fit: contain;
+  transition: filter 0.25s ease;
+}
+
+/* Logo PNG tối — trên dark mode đổi sang teal accent cho khớp chữ BookStore */
+[data-theme='dark'] .header__logo-img {
+  filter: brightness(0) saturate(100%) invert(76%) sepia(39%) saturate(626%) hue-rotate(122deg) brightness(99%) contrast(92%);
+}
+
+[data-theme='light'] .header__logo-img {
+  filter: none;
 }
 
 .header__logo-name {

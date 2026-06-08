@@ -1,7 +1,13 @@
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useContext } from 'react';
-import { formatVndDisplay, listPriceVnd, salePriceDisplayVnd } from '../function/function.js';
+import {
+  formatVndDisplay,
+  listPriceVnd,
+  salePriceDisplayVnd,
+  resolveVisibleBookDiscountPercent,
+  resolvePayableBookDiscountPercent,
+} from '../function/function.js';
 import styles from './BookCard.module.scss';
 import { AuthContext } from '../context/auth.context.js';
 import FlashSaleBadge from '../FlashSaleBadge/FlashSaleBadge.js';
@@ -25,10 +31,18 @@ function formatRating(v) {
 export default function BookCard({ book: item, meta: _meta, layout = 'grid' }) {
   const { auth } = useContext(AuthContext);
   const isMember = !!auth?.user?.isMember;
+  const memberTierDiscountPercent = Number(auth?.user?.membershipDiscountPercent) || 0;
+  const visibleDiscount = resolveVisibleBookDiscountPercent(item, {
+    isMember,
+    memberTierDiscountPercent,
+  });
+  const payableDiscount = resolvePayableBookDiscountPercent(item, {
+    isMember,
+    memberTierDiscountPercent,
+  });
+  const hasDiscount = visibleDiscount > 0;
+  const showSalePrice = payableDiscount > 0;
   const isMemberOnly = !!item?.isMemberOnly;
-  const disc = Number(item?.discount) || 0;
-  const effectiveDiscount = isMemberOnly && !isMember ? 0 : disc;
-  const hasDiscount = effectiveDiscount > 0;
   const sold = Number(item?.sold) || 0;
   const evaluate = Number(item?.evaluate);
   const rating = Number.isNaN(evaluate) ? 0 : Math.min(5, Math.max(0, evaluate));
@@ -51,8 +65,8 @@ export default function BookCard({ book: item, meta: _meta, layout = 'grid' }) {
             </span>
           )}
           {hasDiscount && (
-            <div className={styles.promoBadge} aria-label={`Giảm giá ${disc} phần trăm`}>
-              <span className={styles.promoPercent}>-{effectiveDiscount}%</span>
+            <div className={styles.promoBadge} aria-label={`Giảm giá ${visibleDiscount} phần trăm`}>
+              <span className={styles.promoPercent}>-{visibleDiscount}%</span>
               <span className={styles.promoLabel}>GIẢM</span>
             </div>
           )}
@@ -108,13 +122,20 @@ export default function BookCard({ book: item, meta: _meta, layout = 'grid' }) {
             )}
           </div>
           <div className={styles.cardFooter}>
-            {hasDiscount ? (
+            {showSalePrice ? (
               <div className={styles.priceRow}>
-                <span className={styles.discTag}>-{effectiveDiscount}%</span>
+                <span className={styles.discTag}>-{payableDiscount}%</span>
                 <div className={styles.priceStack}>
                   <span className={styles.cardPriceOld}>{formatVndDisplay(listPriceVnd(item.price))}</span>
-                  <span className={styles.cardPrice}>{formatVndDisplay(salePriceDisplayVnd(item.price, effectiveDiscount))}</span>
+                  <span className={styles.cardPrice}>
+                    {formatVndDisplay(salePriceDisplayVnd(item.price, payableDiscount))}
+                  </span>
                 </div>
+              </div>
+            ) : hasDiscount ? (
+              <div className={styles.priceRow}>
+                <span className={styles.discTag}>-{visibleDiscount}%</span>
+                <span className={styles.cardPrice}>{formatVndDisplay(listPriceVnd(item.price))}</span>
               </div>
             ) : (
               <span className={styles.cardPrice}>{formatVndDisplay(listPriceVnd(item.price))}</span>

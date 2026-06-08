@@ -184,6 +184,29 @@
   accent-color: #14b8a6;
 }
 
+.yearInput {
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1.32rem;
+  color: #0f172a;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.yearInput:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
+.yearInput::placeholder {
+  color: #94a3b8;
+}
+
 .seeMore {
   display: inline-flex;
   align-items: center;

@@ -36,6 +36,7 @@ router.post('/categories/repair-books', CategoryController.repairBooks)
 router.get('/books/detail', SiteController.getBookPublicDetail);
 router.get('/books/search',SiteController.getBookSearch)
 router.get('/books/filter',SiteController.filterBooks)
+router.get('/books/filter-facets', SiteController.getBookFilterFacets)
 router.get('/books', SiteController.show);
 router.get('/series', SeriesController.list);
 router.post('/series', SeriesController.create);

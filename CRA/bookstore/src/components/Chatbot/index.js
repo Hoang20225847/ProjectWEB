@@ -47,9 +47,36 @@ function renderMarkdown(text) {
   return nodes;
 }
 
+const CHAT_STORAGE_KEY = 'bookstore_chatbot_state';
+
 function getAuthHeaders() {
   const token = localStorage.getItem('access_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function loadPersistedState() {
+  try {
+    const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+function persistChatState(state) {
+  try {
+    sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(state));
+  } catch (_e) {
+    /* ignore quota errors */
+  }
+}
+
+function clearPersistedState() {
+  try {
+    sessionStorage.removeItem(CHAT_STORAGE_KEY);
+  } catch (_e) {
+    /* ignore */
+  }
 }
 
 async function createSession() {
@@ -68,6 +95,15 @@ async function fetchSessionState(sessionId) {
   });
   if (!res.ok) return null;
   return res.json();
+}
+
+async function fetchSessionMessages(sessionId) {
+  const res = await fetch(`${API_BASE}/api/chatbot/session/${sessionId}/messages`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.items || [];
 }
 
 async function postContinue(sessionId, wantMore) {
@@ -151,9 +187,11 @@ function Chatbot() {
   const sessionIdRef = useRef(null);
   const messagesEndRef = useRef(null);
   const feedbackSkipTimerRef = useRef(null);
+  const hydratedRef = useRef(false);
 
   const resetChat = useCallback(() => {
     sessionIdRef.current = null;
+    clearPersistedState();
     setSessionMeta(null);
     setUiPhase('chat');
     setIssueResolved('');
@@ -161,10 +199,6 @@ function Chatbot() {
     setFeedbackText('');
     setMessages([{ text: greeting, sender: 'bot' }]);
   }, [greeting]);
-
-  useEffect(() => {
-    resetChat();
-  }, [resetChat]);
 
   const applySessionState = useCallback((state) => {
     if (!state) return;
@@ -187,6 +221,71 @@ function Chatbot() {
     }
     setUiPhase('chat');
   }, []);
+
+  const mapApiMessages = useCallback(
+    (items) => {
+      const msgs = [{ text: greeting, sender: 'bot' }];
+      (items || []).forEach((item) => {
+        msgs.push({
+          text: item.content,
+          sender: item.role === 'user' ? 'user' : 'bot',
+        });
+      });
+      return msgs;
+    },
+    [greeting],
+  );
+
+  useEffect(() => {
+    if (hydratedRef.current) return undefined;
+    hydratedRef.current = true;
+
+    let cancelled = false;
+
+    async function hydrate() {
+      const saved = loadPersistedState();
+      if (!saved) return;
+
+      if (Array.isArray(saved.messages) && saved.messages.length > 0) {
+        setMessages(saved.messages);
+      }
+      if (typeof saved.uiPhase === 'string') {
+        setUiPhase(saved.uiPhase);
+      }
+      if (typeof saved.isOpen === 'boolean') {
+        setIsOpen(saved.isOpen);
+      }
+      if (saved.sessionMeta) {
+        setSessionMeta(saved.sessionMeta);
+      }
+
+      if (!saved.sessionId) return;
+
+      const state = await fetchSessionState(saved.sessionId);
+      if (cancelled) return;
+
+      if (!state) {
+        clearPersistedState();
+        return;
+      }
+
+      sessionIdRef.current = saved.sessionId;
+      setSessionMeta(state);
+      applySessionState(state);
+
+      const items = await fetchSessionMessages(saved.sessionId);
+      if (cancelled) return;
+
+      if (items?.length) {
+        setMessages(mapApiMessages(items));
+      }
+    }
+
+    hydrate().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [applySessionState, mapApiMessages]);
 
   const ensureSession = useCallback(async () => {
     if (sessionIdRef.current) return sessionIdRef.current;
@@ -231,6 +330,18 @@ function Chatbot() {
     return () => clearInterval(t);
   }, [isOpen, pollSession]);
 
+  useEffect(() => {
+    const sid = sessionIdRef.current || sessionMeta?.sessionId;
+    if (!sid && messages.length <= 1 && uiPhase === 'chat') return;
+    persistChatState({
+      sessionId: sid || null,
+      messages,
+      uiPhase,
+      sessionMeta,
+      isOpen,
+    });
+  }, [messages, uiPhase, sessionMeta, isOpen]);
+
   const handleSkipFeedback = useCallback(async () => {
     const sid = sessionIdRef.current;
     if (!sid) {
@@ -243,6 +354,7 @@ function Chatbot() {
       /* ignore */
     }
     sessionIdRef.current = null;
+    clearPersistedState();
     setUiPhase('ended');
     setMessages((prev) => [
       ...prev,
@@ -278,6 +390,7 @@ function Chatbot() {
     try {
       await postRate(sid, { rating, feedback: feedbackText, issueResolved: issueResolved || undefined });
       sessionIdRef.current = null;
+      clearPersistedState();
       setUiPhase('ended');
       setMessages((prev) => [
         ...prev,

@@ -3,12 +3,12 @@ const vectorSync = require('./vectorSync');
 const config = require('../config');
 
 /**
- * Lắng nghe thay đổi trên collection Books (insert / update / delete)
- * và đồng bộ sang Qdrant. Yêu cầu MongoDB chạy ở chế độ replica set.
- * Nếu không có replica set, ta fallback sang polling đơn giản (interval).
+ * Polling đơn giản: đồng bộ sách đổi (theo updateAt) sang Qdrant.
+ * Xóa sách qua API admin vẫn gọi vectorSync.removeBookById trực tiếp.
  */
 
-let changeStream = null;
+const POLL_INTERVAL_MS = 60 * 1000;
+
 let pollTimer = null;
 let lastPollAt = new Date(0);
 
@@ -25,30 +25,8 @@ async function processFullIndex({ limit = 200 } = {}) {
   return { synced, skipped };
 }
 
-async function handleChange(change) {
-  try {
-    const op = change?.operationType;
-    if (!op) return;
-    if (op === 'delete') {
-      const id = change?.documentKey?._id;
-      if (id) await vectorSync.removeBookById(String(id));
-      return;
-    }
-    if (op === 'insert' || op === 'update' || op === 'replace') {
-      const id = change?.documentKey?._id;
-      if (!id) return;
-      const full = await Book.findById(id).lean();
-      if (!full) return;
-      await vectorSync.syncBook(full);
-    }
-  } catch (err) {
-    console.error('[chatbot.bookWatcher] handleChange error:', err?.message || err);
-  }
-}
-
-function startPollingFallback() {
+function startBookPolling() {
   if (pollTimer) return;
-  const intervalMs = 60 * 1000;
   pollTimer = setInterval(async () => {
     try {
       const since = lastPollAt;
@@ -60,42 +38,19 @@ function startPollingFallback() {
     } catch (err) {
       console.error('[chatbot.bookWatcher] poll error:', err?.message || err);
     }
-  }, intervalMs);
-  console.log('[chatbot.bookWatcher] polling fallback (no replica set).');
+  }, POLL_INTERVAL_MS);
+  console.log(`[chatbot.bookWatcher] polling started (interval ${POLL_INTERVAL_MS / 1000}s).`);
 }
 
-async function startBookWatcher() {
+function startBookWatcher() {
   if (!config.qdrant.enabled) {
     console.log('[chatbot.bookWatcher] Qdrant disabled — skip watcher.');
     return;
   }
-  try {
-    changeStream = Book.watch(
-      [{ $match: { operationType: { $in: ['insert', 'update', 'replace', 'delete'] } } }],
-      { fullDocument: 'updateLookup' },
-    );
-    changeStream.on('change', handleChange);
-    changeStream.on('error', (err) => {
-      console.error('[chatbot.bookWatcher] stream error:', err?.message || err);
-      try { changeStream.close(); } catch (_e) {}
-      changeStream = null;
-      startPollingFallback();
-    });
-    console.log('[chatbot.bookWatcher] change stream started.');
-  } catch (err) {
-    console.warn(
-      '[chatbot.bookWatcher] cannot start change stream (need replica set). Falling back to polling.',
-      err?.message || err,
-    );
-    startPollingFallback();
-  }
+  startBookPolling();
 }
 
-async function stopBookWatcher() {
-  if (changeStream) {
-    try { await changeStream.close(); } catch (_e) {}
-    changeStream = null;
-  }
+function stopBookWatcher() {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;

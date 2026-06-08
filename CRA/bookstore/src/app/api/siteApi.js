@@ -1,4 +1,16 @@
 import axios from '../../components/axios/axios.customize'
+/** Các giá trị bộ lọc thực tế từ catalog — GET /api/books/filter-facets */
+export async function getBookFilterFacets() {
+  try {
+    const response = await fetch('/api/books/filter-facets');
+    if (!response.ok) throw new Error(String(response.status));
+    return await response.json();
+  } catch (err) {
+    console.error('Lỗi khi lấy bộ lọc sách:', err);
+    return null;
+  }
+}
+
 export async function getCategoryList() {
   try {
     const response = await fetch(`/api/categories`);

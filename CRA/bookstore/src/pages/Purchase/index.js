@@ -108,7 +108,7 @@ function Purchase() {
 
     (async () => {
       if (payment === 'success') {
-        const clearKey = sessionStorage.getItem('checkout_vnpay_clear_cart');
+        const clearKey = sessionStorage.getItem('checkout_momo_clear_cart');
         if (clearKey && auth?.user?.email && clearKey === auth.user.email) {
           try {
             const { items } = await getCart(auth.user.email);
@@ -117,23 +117,20 @@ function Purchase() {
           } catch (e) {
             console.log(e);
           }
-          sessionStorage.removeItem('checkout_vnpay_clear_cart');
+          sessionStorage.removeItem('checkout_momo_clear_cart');
         }
         toast.success(
-          method === 'vnpay'
-            ? 'Thanh toán VNPay thành công — đơn hàng đã được ghi nhận'
+          method === 'momo'
+            ? 'Thanh toán MoMo thành công — đơn hàng đã được ghi nhận'
             : 'Thanh toán thành công',
         );
         finishRedirect();
       }
       if (payment === 'failed') {
-        sessionStorage.removeItem('checkout_vnpay_clear_cart');
-        const reason = q.get('reason');
+        sessionStorage.removeItem('checkout_momo_clear_cart');
         toast.error(
-          method === 'vnpay'
-            ? reason === 'checksum'
-              ? 'VNPay: dữ liệu không hợp lệ, vui lòng thử lại'
-              : 'Thanh toán VNPay không thành công hoặc đã hủy'
+          method === 'momo'
+            ? 'Thanh toán MoMo không thành công hoặc đã hủy'
             : 'Thanh toán thất bại',
         );
         finishRedirect();

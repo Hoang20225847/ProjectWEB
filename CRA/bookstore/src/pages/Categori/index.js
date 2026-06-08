@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { getBookList, getCategoryList } from '../../app/api/siteApi.js';
+import { getBookList, getCategoryList, getBookFilterFacets } from '../../app/api/siteApi.js';
 import axios from '../../components/axios/axios.customize.js';
 import BookCard, { BookCardGrid } from '../../components/BookCard/BookCard.js';
 import { toast } from 'react-toastify';
@@ -77,6 +77,7 @@ function Category() {
   const [sortType, setSortType] = useState(100);
   const [sourceBooks, setSourceBooks] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [filterFacets, setFilterFacets] = useState(null);
   const [priceMenuOpen, setPriceMenuOpen] = useState(false);
   const priceMenuRef = useRef(null);
 
@@ -101,6 +102,13 @@ function Category() {
     (async () => {
       const list = await getCategoryList();
       setCategories(Array.isArray(list) ? list : []);
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const facets = await getBookFilterFacets();
+      setFilterFacets(facets);
     })();
   }, []);
 
@@ -252,6 +260,7 @@ function Category() {
           searchParams={searchParams}
           setSearchParams={setSearchParams}
           categories={categories}
+          filterFacets={filterFacets}
         />
 
         <div className={styles.searchMain}>

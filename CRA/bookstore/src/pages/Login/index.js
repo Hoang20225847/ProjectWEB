@@ -32,6 +32,7 @@ function LoginPage() {
           phone: data?.user?.phone ?? '',
           membershipTierSlug: data?.user?.membershipTierSlug ?? '',
           membershipTierName: data?.user?.membershipTierName ?? '',
+          membershipDiscountPercent: data?.user?.membershipDiscountPercent ?? 0,
           loyaltyPoints: data?.user?.loyaltyPoints ?? 0,
           totalSpentDong: data?.user?.totalSpentDong ?? 0,
           memberSince: data?.user?.memberSince ?? null,

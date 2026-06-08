@@ -33,6 +33,20 @@ function normalizeDongValue(v) {
   return n < 1000 ? n * 1000 : n;
 }
 
+/** Doanh thu một dòng đơn (đồng) — chuẩn hóa legacy giá < 1000. */
+function orderLineRevenueDong(item) {
+  const qty = Math.max(0, Number(item?.quantity) || 0);
+  const totalRaw = Number(item?.totalPrice);
+  if (Number.isFinite(totalRaw) && totalRaw > 0) {
+    return normalizeDongValue(totalRaw);
+  }
+  const unitRaw = Number(item?.price) || 0;
+  if (qty > 0 && unitRaw > 0) {
+    return normalizeDongValue(unitRaw) * qty;
+  }
+  return 0;
+}
+
 function listPriceVnd(raw) {
   return listPriceVndFromBookPrice(raw);
 }
@@ -546,22 +560,25 @@ class StatisticsController {
             bookId = String(rawBook._id);
           } else if (typeof rawBook === 'string' && mongoose.Types.ObjectId.isValid(rawBook)) {
             bookId = rawBook;
+          } else if (rawBook instanceof mongoose.Types.ObjectId) {
+            bookId = String(rawBook);
           }
           if (!bookId) return;
 
           if (!summary.has(bookId)) {
             summary.set(bookId, {
               _id: bookId,
-              name: rawBook?.name || '',
-              img: rawBook?.img || rawBook?.image || '',
-              price: Number(rawBook?.price) || 0,
+              name: item.bookSnapshot?.name || rawBook?.name || '',
+              img: item.bookSnapshot?.img || rawBook?.img || rawBook?.image || '',
               totalSold: 0,
               totalRevenue: 0,
             });
           }
           const row = summary.get(bookId);
           row.totalSold += Number(item.quantity) || 0;
-          row.totalRevenue += Number(item.totalPrice) || ((Number(item.quantity) || 0) * (Number(item.price) || row.price || 0));
+          row.totalRevenue += orderLineRevenueDong(item);
+          if (!row.name && item.bookSnapshot?.name) row.name = item.bookSnapshot.name;
+          if (!row.img && item.bookSnapshot?.img) row.img = item.bookSnapshot.img;
         });
       });
 
@@ -578,11 +595,10 @@ class StatisticsController {
             ...row,
             name: dbBook?.name || row.name || 'Sách',
             img: dbBook?.img || dbBook?.image || row.img || '',
-            price: Number(dbBook?.price) || row.price || 0,
           };
         })
-        .sort((a, b) => b.totalSold - a.totalSold)
-        .slice(0, parseInt(limit));
+        .sort((a, b) => b.totalSold - a.totalSold || b.totalRevenue - a.totalRevenue)
+        .slice(0, parseInt(limit, 10));
 
       res.status(200).json(topBooks);
     } catch (error) {

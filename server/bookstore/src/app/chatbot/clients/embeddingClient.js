@@ -4,7 +4,7 @@ const config = require('../config');
 /**
  * Embedding client. Hỗ trợ:
  *  - provider = 'gemini'   -> Google Generative Language API (gemini-embedding-001 / text-embedding-004)
- *  - provider = 'openai'   -> OpenAI-compatible /embeddings (text-embedding-3-small, 1536 chiều)
+ *  - provider = 'openai'   -> OpenAI-compatible /embeddings (model từ CHATBOT_EMBED_MODEL)
  *
  * Tự động trả vector zero (sentinel) nếu chưa cấu hình key — để pipeline không crash khi dev.
  * Có LRU cache + TTL trong RAM để giảm số request lên API (tránh 429 free tier).

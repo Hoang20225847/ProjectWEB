@@ -62,7 +62,7 @@ async function bootstrap() {
 
     app.listen(port, () => {
       console.log(`API listening on port ${port}`);
-      console.log(`Public API URL (uploads/VNPay): ${getPublicApiUrl()}`);
+      console.log(`Public API URL (uploads/MoMo callback): ${getPublicApiUrl()}`);
       console.log(`CORS origins: ${corsOrigins.join(', ')}`);
     });
   } catch (err) {

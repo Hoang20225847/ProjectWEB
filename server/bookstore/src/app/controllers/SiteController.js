@@ -17,7 +17,7 @@ const {
   LISTING_STATUSES,
 } = require('../utils/bookVisibility');
 const { bookPriceToStorageString } = require('../utils/moneyVnd');
-const { computeMembershipSpendProgress } = require('../services/membershipService');
+const { computeMembershipSpendProgress, resolveMemberTierDiscountPercent } = require('../services/membershipService');
 const flashSaleService = require('../services/flashSaleService');
 const { getPublicApiUrl } = require('../../config/appConfig');
 const { slugifyBookName } = require('../utils/bookCoverFilename');
@@ -32,6 +32,74 @@ const BOOK_FORMATS = new Set([
   'leather',
   'other',
 ]);
+
+const BOOK_FORMAT_LABELS = {
+  paperback: 'Bìa mềm',
+  hardcover: 'Bìa cứng',
+  spiral: 'Gáy xoắn',
+  flexibound: 'Bìa dẻo',
+  box_set: 'Bộ hộp',
+  leather: 'Bìa da',
+  other: 'Khác',
+};
+
+const LANGUAGE_LABELS = {
+  vi: 'Tiếng Việt',
+  en: 'Tiếng Anh',
+  zh: 'Tiếng Trung',
+  other: 'Khác',
+};
+
+const PRICE_BAND_DEFS = [
+  { label: '0đ - 150.000đ', value: '0-150000' },
+  { label: '150.000đ - 300.000đ', value: '150000-300000' },
+  { label: '300.000đ - 500.000đ', value: '300000-500000' },
+  { label: '500.000đ - 700.000đ', value: '500000-700000' },
+  { label: '700.000đ trở lên', value: '700000-2000000000' },
+];
+
+function humanizeGenreTag(value) {
+  return String(value)
+    .split('_')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function mergeMatchWithExpr(baseMatch, expr) {
+  if (!expr) return baseMatch;
+  const hasBase = baseMatch && Object.keys(baseMatch).length > 0;
+  if (!hasBase) return expr;
+  return { $and: [baseMatch, expr] };
+}
+
+function publishedYearMatchCondition(y) {
+  return {
+    $or: [
+      { publishedYear: y },
+      {
+        $and: [
+          { $or: [{ publishedYear: null }, { publishedYear: { $exists: false } }] },
+          { $expr: { $eq: [{ $year: '$createAt' }, y] } },
+        ],
+      },
+    ],
+  };
+}
+
+function parsePublishedYearList(yearsParam, yearParam) {
+  const raw = [
+    ...parseCsvParam(yearsParam),
+    ...(yearParam != null && String(yearParam).trim() !== '' ? [String(yearParam).trim()] : []),
+  ];
+  const out = new Set();
+  raw.forEach((token) => {
+    if (!/^\d{4}$/.test(String(token))) return;
+    const y = Number.parseInt(String(token), 10);
+    if (y >= 1900 && y <= 2100) out.add(y);
+  });
+  return [...out];
+}
 
 function parseCsvParam(v) {
   if (v == null || v === '') return [];
@@ -434,8 +502,10 @@ class SiteController{
               const hasTier = !!(account.membershipTier && (account.membershipTier.slug || account.membershipTier.name));
               const isMemberLike = !!(account.isMember || hasTier);
               let membershipProgress = null;
+              let membershipDiscountPercent = 0;
               if (req.user.role === 'user' && isMemberLike) {
                 membershipProgress = await computeMembershipSpendProgress(Number(account.totalSpentDong) || 0);
+                membershipDiscountPercent = await resolveMemberTierDiscountPercent(account);
               }
               return res.json({user:{
                 id:account._id,
@@ -447,6 +517,7 @@ class SiteController{
                 phone:account.phone || '',
                 membershipTierSlug: account.membershipTier?.slug || '',
                 membershipTierName: account.membershipTier?.name || '',
+                membershipDiscountPercent,
                 loyaltyPoints: account.loyaltyPoints || 0,
                 totalSpentDong: account.totalSpentDong || 0,
                 memberSince: account.memberSince || null,
@@ -475,8 +546,10 @@ class SiteController{
       const hasTier = !!(account.membershipTier && (account.membershipTier.slug || account.membershipTier.name));
       const isMemberLike = !!(account.isMember || hasTier);
       let membershipProgress = null;
+      let membershipDiscountPercent = 0;
       if (req.user.role === 'user' && isMemberLike) {
         membershipProgress = await computeMembershipSpendProgress(Number(account.totalSpentDong) || 0);
+        membershipDiscountPercent = await resolveMemberTierDiscountPercent(account);
       }
       return res.json({
         user:{
@@ -489,6 +562,7 @@ class SiteController{
           isMember: isMemberLike,
           membershipTierSlug: account.membershipTier?.slug || '',
           membershipTierName: account.membershipTier?.name || '',
+          membershipDiscountPercent,
           loyaltyPoints: account.loyaltyPoints || 0,
           totalSpentDong: account.totalSpentDong || 0,
           memberSince: account.memberSince || null,
@@ -1199,7 +1273,10 @@ async createAddress(req,res,next)
         manufacturingOrigins,
         brandOrigins,
         coverColors,
-              memberOnly,
+        memberOnly,
+        years,
+        minRating,
+        onSaleOnly,
       } = req.query;
       const andConditions = [];
 
@@ -1212,19 +1289,11 @@ async createAddress(req,res,next)
         if (cat) andConditions.push({ category: cat._id });
       }
 
-      if (year && /^\d{4}$/.test(String(year))) {
-        const y = parseInt(year, 10);
-        andConditions.push({
-          $or: [
-            { publishedYear: y },
-            {
-              $and: [
-                { $or: [{ publishedYear: null }, { publishedYear: { $exists: false } }] },
-                { $expr: { $eq: [{ $year: '$createAt' }, y] } },
-              ],
-            },
-          ],
-        });
+      const yearList = parsePublishedYearList(years, year);
+      if (yearList.length === 1) {
+        andConditions.push(publishedYearMatchCondition(yearList[0]));
+      } else if (yearList.length > 1) {
+        andConditions.push({ $or: yearList.map((y) => publishedYearMatchCondition(y)) });
       }
 
       if (productionYear && /^\d{4}$/.test(String(productionYear))) {
@@ -1348,6 +1417,21 @@ async createAddress(req,res,next)
         andConditions.push({ isMemberOnly: toBooleanLoose(memberOnly, false) });
       }
 
+      const minRatingVal = toNullableInt(minRating, { min: 1, max: 5 });
+      if (minRatingVal != null) {
+        andConditions.push({ evaluate: { $gte: minRatingVal } });
+      }
+
+      if (toBooleanLoose(onSaleOnly, false)) {
+        const flashMap = await flashSaleService.getActiveFlashSaleMap();
+        const flashIds = [...flashMap.keys()]
+          .filter((id) => mongoose.Types.ObjectId.isValid(String(id)))
+          .map((id) => new mongoose.Types.ObjectId(String(id)));
+        const promoOr = [{ discount: { $gt: 0 } }];
+        if (flashIds.length) promoOr.push({ _id: { $in: flashIds } });
+        andConditions.push({ $or: promoOr });
+      }
+
       const pMin = toNullableInt(pagesMin, { min: 0 });
       const pMax = toNullableInt(pagesMax, { min: 0 });
       if (pMin != null || pMax != null) {
@@ -1386,6 +1470,152 @@ async createAddress(req,res,next)
       return res.status(200).json(enriched);
     } catch (error) {
       return res.status(500).json({ error: 'Lỗi khi lọc sách', message: String(error.message) });
+    }
+  }
+
+  /** Giá trị bộ lọc thực tế có trong catalog (distinct / aggregate trên sách đang hiển thị). */
+  async getBookFilterFacets(req, res, next) {
+    try {
+      await categoryCtl.ensureSeedAndMigrate();
+      const admin = req.user?.role === 'admin';
+      const match = admin ? {} : mongoFilterPublishedCatalog();
+      const nonEmptyStr = { $exists: true, $nin: [null, ''] };
+
+      const [
+        genresRaw,
+        languagesRaw,
+        brandsRaw,
+        suppliersRaw,
+        publishersRaw,
+        ageRangesRaw,
+        mfgRaw,
+        boRaw,
+        colorsRaw,
+        formatsRaw,
+        publishedYearsRaw,
+        memberOnlyCount,
+        promoDiscCount,
+      ] = await Promise.all([
+        Books.aggregate([
+          { $match: { ...match, genres: { $exists: true, $ne: [] } } },
+          { $unwind: '$genres' },
+          { $match: { genres: nonEmptyStr } },
+          { $group: { _id: { $toLower: '$genres' }, count: { $sum: 1 } } },
+          { $sort: { _id: 1 } },
+        ]),
+        Books.distinct('language', { ...match, language: nonEmptyStr }),
+        Books.distinct('brand', { ...match, brand: nonEmptyStr }),
+        Books.distinct('supplier', { ...match, supplier: nonEmptyStr }),
+        Books.distinct('publisher', { ...match, publisher: nonEmptyStr }),
+        Books.distinct('ageRange', { ...match, ageRange: nonEmptyStr }),
+        Books.distinct('manufacturingOrigin', { ...match, manufacturingOrigin: nonEmptyStr }),
+        Books.distinct('brandOrigin', { ...match, brandOrigin: nonEmptyStr }),
+        Books.distinct('coverColor', { ...match, coverColor: nonEmptyStr }),
+        Books.distinct('format', { ...match, format: { $in: [...BOOK_FORMATS] } }),
+        Books.aggregate([
+          { $match: match },
+          {
+            $project: {
+              y: {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ['$publishedYear', null] },
+                      { $gt: ['$publishedYear', 0] },
+                    ],
+                  },
+                  '$publishedYear',
+                  { $year: '$createAt' },
+                ],
+              },
+            },
+          },
+          { $match: { y: { $gte: 1900, $lte: 2100 } } },
+          { $group: { _id: '$y', count: { $sum: 1 } } },
+          { $sort: { _id: -1 } },
+        ]),
+        Books.countDocuments({ ...match, isMemberOnly: true }),
+        Books.countDocuments({ ...match, discount: { $gt: 0 } }),
+      ]);
+
+      const flashMap = await flashSaleService.getActiveFlashSaleMap();
+      const flashPromoCount = [...flashMap.keys()].filter((id) =>
+        mongoose.Types.ObjectId.isValid(String(id))
+      ).length;
+
+      const supplierSet = new Map();
+      [...suppliersRaw, ...publishersRaw].forEach((v) => {
+        const s = String(v).trim();
+        if (s) supplierSet.set(s, s);
+      });
+
+      const langOk = new Set(['vi', 'en', 'zh', 'other']);
+      const toOption = (value, label) => ({ value, label: label || value });
+
+      const priceBandCounts = await Promise.all(
+        PRICE_BAND_DEFS.map(async (band) => {
+          const m = String(band.value).match(/^(\d+)-(\d+)$/);
+          if (!m) return null;
+          const lo = Number.parseInt(m[1], 10);
+          const hi = Number.parseInt(m[2], 10);
+          const expr = priceDongRangeExpr(lo, hi);
+          if (!expr) return null;
+          const count = await Books.countDocuments(mergeMatchWithExpr(match, expr));
+          return count > 0 ? { ...band, count } : null;
+        })
+      );
+
+      return res.status(200).json({
+        genres: genresRaw.map((r) =>
+          toOption(r._id, humanizeGenreTag(r._id))
+        ),
+        languages: languagesRaw
+          .map((l) => String(l).trim().toLowerCase())
+          .filter((l) => langOk.has(l))
+          .sort()
+          .map((l) => toOption(l, LANGUAGE_LABELS[l] || l)),
+        brands: brandsRaw
+          .map((b) => String(b).trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'vi'))
+          .map((b) => toOption(b)),
+        suppliers: [...supplierSet.values()]
+          .sort((a, b) => a.localeCompare(b, 'vi'))
+          .map((s) => toOption(s)),
+        ageRanges: ageRangesRaw
+          .map((a) => String(a).trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'vi'))
+          .map((a) => toOption(a)),
+        manufacturingOrigins: mfgRaw
+          .map((v) => String(v).trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'vi'))
+          .map((v) => toOption(v)),
+        brandOrigins: boRaw
+          .map((v) => String(v).trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'vi'))
+          .map((v) => toOption(v)),
+        coverColors: colorsRaw
+          .map((v) => String(v).trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'vi'))
+          .map((v) => toOption(v)),
+        formats: formatsRaw
+          .map((f) => String(f).trim().toLowerCase())
+          .filter((f) => BOOK_FORMATS.has(f))
+          .sort()
+          .map((f) => toOption(f, BOOK_FORMAT_LABELS[f] || f)),
+        priceBands: priceBandCounts.filter(Boolean),
+        publishedYears: publishedYearsRaw.map((r) =>
+          toOption(String(r._id), String(r._id))
+        ),
+        hasMemberOnlyBooks: memberOnlyCount > 0,
+        hasPromotionalBooks: promoDiscCount > 0 || flashPromoCount > 0,
+      });
+    } catch (error) {
+      return res.status(500).json({ error: 'Lỗi khi lấy bộ lọc', message: String(error.message) });
     }
   }
 

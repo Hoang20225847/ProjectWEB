@@ -43,13 +43,21 @@ function shouldIndexPromotion(sale, now = Date.now()) {
   return new Date(sale.endsAt).getTime() > now;
 }
 
-function promotionTemporalOk(payload, now = Date.now()) {
+/** Đang chạy hoặc chưa bắt đầu — dùng cho RAG khi user hỏi flash sale / KM sắp tới. */
+function promotionVisibleOk(payload, now = Date.now()) {
   const t = Number(now);
   if (!payload?.active) return false;
-  const starts = Number(payload.startsAtMs);
   const ends = Number(payload.endsAtMs);
-  if (Number.isFinite(starts) && t < starts) return false;
   if (Number.isFinite(ends) && t > ends) return false;
+  return true;
+}
+
+/** Chỉ chương trình đang trong khung giờ giảm giá (live). */
+function promotionTemporalOk(payload, now = Date.now()) {
+  const t = Number(now);
+  if (!promotionVisibleOk(payload, t)) return false;
+  const starts = Number(payload.startsAtMs);
+  if (Number.isFinite(starts) && t < starts) return false;
   return true;
 }
 
@@ -89,6 +97,7 @@ async function syncFlashSaleById(saleOrId) {
 module.exports = {
   syncFlashSaleById,
   promotionTemporalOk,
+  promotionVisibleOk,
   shouldIndexPromotion,
   promotionPayload,
 };

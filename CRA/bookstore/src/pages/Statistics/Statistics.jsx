@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useContext, useCallback } from 'react';
 import axios from '../../components/axios/axios.customize';
 import { AuthContext } from '../../components/context/auth.context';
+import { formatVndDisplay } from '../../components/function/function.js';
 import styles from './Statistics.module.scss';
 
-/** API thống kê (đơn.totalAmount, dòng đơn…) trả về đồng VNĐ — không nhân thêm 1000 */
+/** API thống kê tổng hợp (totalAmount đơn…) trả về đồng VNĐ đầy đủ */
 const formatCurrency = (valueDong) => {
   const n = Math.round(Number(valueDong) || 0);
   return n.toLocaleString('vi-VN');
@@ -475,7 +476,7 @@ function Statistics() {
               <div>
                 <h4 className={styles.bookTitle}>{book.name}</h4>
                 <p className={styles.muted}>Đã bán: {book.totalSold || 0}</p>
-                <p className={styles.muted}>Doanh thu dòng: {formatCurrency(book.totalRevenue)}đ</p>
+                <p className={styles.muted}>Doanh thu dòng: {formatVndDisplay(book.totalRevenue)}</p>
               </div>
             </article>
           ))}

@@ -24,6 +24,7 @@ function buildSystemPrompt() {
     '6. Luôn lịch sự, khuyến khích user xem chi tiết / thêm vào giỏ.',
     '7. Đơn hàng cá nhân: CHỈ tư vấn dựa trên đơn hàng / lịch sử mua khi user ĐÃ đăng nhập (thông tin USER bên dưới ghi rõ isLoggedIn). Nếu chưa đăng nhập, KHÔNG hỏi email, hãy mời họ đăng nhập rồi quay lại — và vẫn có thể tư vấn sách chung.',
     '9. Flash sale / voucher / ưu đãi: dùng dữ liệu trong khối "KẾT QUẢ TOOL" và "USER" để giải thích; không cần sách trong SÁCH LIÊN QUAN nếu hỏi về KM.',
+    '9b. getFlashSale: trường sales = đang chạy; upcomingSales = sắp diễn ra. Nếu user hỏi "sắp có flash sale không", ưu tiên upcomingSales; nếu hỏi chung thì liệt kê cả hai khi có dữ liệu.',
     '10. Nếu có khối RAG FAQ hoặc RAG PROMOTIONS (tìm semantic tách domain): dùng làm gợi ý khái niệm; giá và thời hạn KM vẫn ưu tiên KẾT QUẢ TOOL (getFlashSale, checkVoucher) khi có.',
     '11. Sở thích đọc: nếu user mô tả gu (kinh dị, tự truyện, trẻ em, học tiếng Anh…) thì căn vào danh SÁCH LIÊN QUAN và thể loại trong khối sách để gợi ý thích hợp; không được bịa đầu sách không nằm trong CONTEXT.',
     'QUY TẮC ĐỊNH DẠNG (BẮT BUỘC):',

@@ -33,6 +33,65 @@ function listPriceVnd(raw) {
   return n * 1000;
 }
 
+/**
+ * % giảm hiển thị (badge, nhãn KM) — flash + % admin luôn hiện với mọi người;
+ * % hạng hội viên chỉ hiện khi đã là hội viên và sách isMemberOnly.
+ */
+function resolveVisibleBookDiscountPercent(book, { isMember = false, memberTierDiscountPercent = 0 } = {}) {
+  if (!book || typeof book !== 'object') return 0;
+  const isMemberOnly = !!book.isMemberOnly;
+  const flashLive = book?.flashSale?.status === 'live';
+  const flashDisc = flashLive
+    ? Math.max(0, Number(book?.flashSale?.discountPercent ?? book?.discount) || 0)
+    : 0;
+  const bookDisc = flashLive
+    ? Math.max(0, Number(book?.flashSale?.originalDiscount) || 0)
+    : Math.max(0, Number(book?.discount) || 0);
+
+  if (flashDisc > 0) return flashDisc;
+  if (bookDisc > 0) return bookDisc;
+  if (isMemberOnly && isMember && memberTierDiscountPercent > 0) {
+    return Math.max(0, Number(memberTierDiscountPercent) || 0);
+  }
+  return 0;
+}
+
+/**
+ * % giảm áp dụng khi mua (giá trên thẻ / giỏ) — đồng bộ server:
+ * flash → % admin → % hạng; sách hội viên: khách thường không được % admin/hạng.
+ */
+function resolvePayableBookDiscountPercent(book, { isMember = false, memberTierDiscountPercent = 0 } = {}) {
+  if (!book || typeof book !== 'object') return 0;
+  const isMemberOnly = !!book.isMemberOnly;
+  const flashLive = book?.flashSale?.status === 'live';
+  const flashDisc = flashLive
+    ? Math.max(0, Number(book?.flashSale?.discountPercent ?? book?.discount) || 0)
+    : 0;
+  const bookDisc = flashLive
+    ? Math.max(0, Number(book?.flashSale?.originalDiscount) || 0)
+    : Math.max(0, Number(book?.discount) || 0);
+
+  if (flashDisc > 0) return flashDisc;
+  if (isMemberOnly && !isMember) return 0;
+  if (bookDisc > 0) return bookDisc;
+  if (isMemberOnly && isMember && memberTierDiscountPercent > 0) {
+    return Math.max(0, Number(memberTierDiscountPercent) || 0);
+  }
+  return 0;
+}
+
+/** Sách đang có khuyến mãi cửa hàng (admin hoặc flash sale đang chạy). */
+function bookHasStorePromotion(book) {
+  if (!book || typeof book !== 'object') return false;
+  if (book?.flashSale?.status === 'live') return true;
+  return Math.max(0, Number(book?.discount) || 0) > 0;
+}
+
+/** @deprecated Dùng resolveVisibleBookDiscountPercent / resolvePayableBookDiscountPercent */
+function resolveEffectiveBookDiscountPercent(book, opts = {}) {
+  return resolvePayableBookDiscountPercent(book, opts);
+}
+
 /** Giá sau KM (đồng) — chỉ dùng để hiển thị; giỏ hàng vẫn dùng DiscountPrice (cùng đơn vị với giá gốc trong DB). */
 function salePriceDisplayVnd(listPriceRaw, discountPct) {
   const base = listPriceVnd(listPriceRaw);
@@ -67,5 +126,9 @@ export {
   formatVndDisplay,
   parseVndInputToDong,
   formatDongAsVndLabel,
+  resolveVisibleBookDiscountPercent,
+  resolvePayableBookDiscountPercent,
+  bookHasStorePromotion,
+  resolveEffectiveBookDiscountPercent,
 };
 export default DiscountPrice;
