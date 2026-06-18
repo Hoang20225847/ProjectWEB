@@ -19,10 +19,12 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import { Link } from 'react-router-dom';
 
 import { resolveMediaUrl } from '../../config/api';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind(styles);
 
 function ManageHeroImage() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -160,7 +162,11 @@ function ManageHeroImage() {
   };
 
   const handleDelete = async (item) => {
-    if (!window.confirm(`Xóa hero image "${item.altText || 'này'}"?`)) return;
+    const ok = await confirmDelete({
+      title: 'Xóa hero image',
+      itemName: item.altText || 'này',
+    });
+    if (!ok) return;
     try {
       await deleteHeroImage(item._id);
       toast.success('Đã xóa hero image');
@@ -454,7 +460,7 @@ function ManageHeroImage() {
       />
 
       {showModal && (
-        <div className={cx('modalOverlay')} onClick={handleCloseModal}>
+        <div className={cx('modalOverlay')} role="presentation">
           <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
             <div className={cx('modalHeader')}>
               <h3>
@@ -559,6 +565,7 @@ function ManageHeroImage() {
           </div>
         </div>
       )}
+      <ConfirmDeleteDialog />
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { BOOK_FORMAT_OPTIONS } from '../../utils/bookFormat.js';
 import { formatVndDisplay, listPriceVnd } from '../../components/function/function.js';
 import AdminSearchBar from '../../components/Layout/AdminLayout/AdminSearchBar.js';
 import { matchesVietnameseSearch } from '../../utils/vietnameseSearch.js';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind(styles);
 
@@ -33,6 +34,7 @@ function listingLabel(status) {
 }
 
 function ManageBook() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [data, setData] = useState(null);
   const [bookFormOpen, setBookFormOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
@@ -175,8 +177,9 @@ function ManageBook() {
 
   const gridStyle = { gridTemplateColumns };
 
-  const handleDelete = (book) => {
-    if (!window.confirm(`Xóa sách "${book.name}"?`)) return;
+  const handleDelete = async (book) => {
+    const ok = await confirmDelete({ title: 'Xóa sách', itemName: book.name });
+    if (!ok) return;
     removeBook(book._id);
     setData((prev) => prev.filter((item) => item._id !== book._id));
     toast.success('Đã xóa sách thành công');
@@ -600,6 +603,7 @@ function ManageBook() {
           onSuccess={handleBookFormSuccess}
         />
       )}
+      <ConfirmDeleteDialog />
     </div>
   );
 }

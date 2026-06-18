@@ -78,6 +78,7 @@ router.delete(
 );
 router.post('/cart',CartController.create)
 router.get('/cart',CartController.getCart)
+router.post('/cart/validate-checkout',CartController.validateCheckout)
 router.put('/cart/update',CartController.updateCart)
 router.put('/cart',CartController.removeItemCart)
 router.get('/order/search',OrderController.getOrderSearch)

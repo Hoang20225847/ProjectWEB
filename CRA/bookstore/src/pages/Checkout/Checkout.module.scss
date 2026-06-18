@@ -46,36 +46,152 @@ $shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   font-weight: 600;
 }
 
-.checkout-info {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.4rem;
-}
-
 .checkout-name,
 .checkout-phone {
   font-weight: 700;
   color: $text-main;
 }
 
-.checkout-address {
+.addressPanel {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 16px;
+}
+
+.addressDisplay {
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed #dbe2ea;
+}
+
+.addressDisplayTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.45rem;
+}
+
+.addressDisplayText {
+  margin: 8px 0 0;
+  font-size: 1.35rem;
+  line-height: 1.5;
   color: $muted;
-  margin-left: 4px;
 }
 
-.change-address-btn {
+.addressDefaultBadge {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f766e;
+  background: rgba(45, 212, 191, 0.18);
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.addressEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed #dbe2ea;
+}
+
+.addressEmptyIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
   color: var(--primary-color);
-  cursor: pointer;
-  margin-left: auto;
-  text-decoration: none;
-  font-size: 1.4rem;
-  font-weight: 600;
+  background: var(--primary-color-rgba);
+  margin-bottom: 10px;
 }
 
-.change-address-btn:hover {
-  text-decoration: underline;
+.addressEmptyTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $text-main;
+}
+
+.addressEmptyDesc {
+  margin: 6px 0 0;
+  max-width: 420px;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: $muted;
+}
+
+.addressActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.addressActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 10px 16px;
+  min-height: 40px;
+  cursor: pointer;
+  font-size: 1.35rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.addressActionBtn:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: #0f766e;
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.addressActionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f1f5f9;
+}
+
+.addressActionBtnPrimary {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: #0f172a;
+}
+
+.addressActionBtnPrimary:hover:not(:disabled) {
+  background: #26c4ae;
+  border-color: #26c4ae;
+  color: #0f172a;
+}
+
+.addressActionBtnActive {
+  border-color: var(--primary-color);
+  color: #0f766e;
+  background: rgba(45, 212, 191, 0.12);
+}
+
+.addressSelectWrap {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #dbe2ea;
+}
+
+.addressSelectLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $muted;
 }
 
 .checkout-product {
@@ -423,6 +539,24 @@ $shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   animation: voucherPopIn 0.25s ease-out;
 }
 
+.addressSelect {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: $text-main;
+  font-size: 1.35rem;
+  padding: 11px 14px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.addressSelect:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-color-rgba);
+}
+
 .voucherModalHeader {
   display: flex;
   justify-content: space-between;
@@ -569,6 +703,15 @@ $shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 
   .checkout-info-content {
     margin: 14px;
+  }
+
+  .addressActions {
+    flex-direction: column;
+  }
+
+  .addressActionBtn {
+    width: 100%;
+    justify-content: center;
   }
 
   .checkout-grid {

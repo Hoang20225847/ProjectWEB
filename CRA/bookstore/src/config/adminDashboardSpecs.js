@@ -37,6 +37,14 @@ export const USER_TABLE_SPEC = [
   { id: 'action', label: 'Thao tác', required: true, width: '120px' },
 ];
 
+export const LS_ADMIN_ACCOUNT_COLS = 'bookstore-admin:cols-manage-admin-account';
+export const ADMIN_ACCOUNT_TABLE_SPEC = [
+  { id: 'name', label: 'Tên', required: true, width: 'minmax(200px, 1fr)' },
+  { id: 'email', label: 'Email', width: 'minmax(220px, 1.2fr)' },
+  { id: 'createdAt', label: 'Ngày tạo', width: '140px' },
+  { id: 'action', label: 'Thao tác', required: true, width: '120px' },
+];
+
 export const LS_CAT_COLS = 'bookstore-admin:cols-manage-category';
 export const CATEGORY_TABLE_SPEC = [
   { id: 'name', label: 'Tên danh mục', required: true, width: 'minmax(280px, 1fr)' },

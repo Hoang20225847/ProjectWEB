@@ -4,10 +4,12 @@ import { toast } from 'react-toastify';
 import adminStyles from '../../components/Layout/AdminLayout/Admin.module.scss';
 import styles from './ManagePublishers.module.scss';
 import axios from '../../components/axios/axios.customize.js';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind({ ...adminStyles, ...styles });
 
 function ManagePublishers() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -72,7 +74,7 @@ function ManagePublishers() {
   };
 
   const remove = async (row) => {
-    const ok = window.confirm(`Xóa nhà xuất bản "${row.name}"?`);
+    const ok = await confirmDelete({ title: 'Xóa nhà xuất bản', itemName: row.name });
     if (!ok) return;
     try {
       await axios.delete(`/api/publishers/${row._id}`);
@@ -137,7 +139,7 @@ function ManagePublishers() {
                       </td>
                       <td>
                         {isEditing ? (
-                          <div className={cx('rowActions')}>
+                          <div className={cx('tableRowActions')}>
                             <button type="button" className="btn btn--primary" onClick={saveEdit}>
                               <i className="fa-solid fa-floppy-disk" /> Lưu
                             </button>
@@ -146,12 +148,17 @@ function ManagePublishers() {
                             </button>
                           </div>
                         ) : (
-                          <div className={cx('rowActions')}>
-                            <button type="button" className="btn btn--secondary" onClick={() => startEdit(r)}>
-                              <i className="fa-solid fa-pen" /> Sửa
+                          <div className={cx('tableRowActions')}>
+                            <button type="button" className={cx('btn-controll')} onClick={() => startEdit(r)} title="Sửa">
+                              <i className="fa-solid fa-pen-to-square" />
                             </button>
-                            <button type="button" className={cx('dangerBtn')} onClick={() => remove(r)}>
-                              <i className="fa-solid fa-trash" /> Xóa
+                            <button
+                              type="button"
+                              className={`${cx('btn-controll')} delete`}
+                              onClick={() => remove(r)}
+                              title="Xóa"
+                            >
+                              <i className="fa-solid fa-trash" />
                             </button>
                           </div>
                         )}
@@ -164,6 +171,7 @@ function ManagePublishers() {
           </div>
         )}
       </div>
+      <ConfirmDeleteDialog />
     </div>
   );
 }

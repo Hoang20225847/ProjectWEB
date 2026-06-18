@@ -10,11 +10,13 @@ import axios from '../../components/axios/axios.customize'
 import { useNavigate } from 'react-router-dom';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import {getCart,updateCart} from '../../app/api/CartApi'
-import {getAddressDefault} from '../../app/api/AddressApi'
+import {getCart,updateCart, validateCheckoutItems} from '../../app/api/CartApi'
+import { getAddress, getAddressDefault } from '../../app/api/AddressApi'
 import { AuthContext } from '../../components/context/auth.context';
 import { formatVndDisplay } from '../../components/function/function.js';
+import Validator from '../../components/function/Validator';
 import { toast } from 'react-toastify';
+import CheckoutChangesModal from '../../components/modal/CheckoutChangesModal';
 const cx = classNames.bind(styles)
 
 function Checkout() {
@@ -22,6 +24,19 @@ function Checkout() {
   const navigate=useNavigate();
   const[data,setData]=useState(null)
   const[address,setAddress]=useState(null)
+  const [addresses, setAddresses] = useState([]);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [showAddressSelect, setShowAddressSelect] = useState(false);
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState('');
+  const [selectedWardCode, setSelectedWardCode] = useState('');
+  const [selectedProvinceName, setSelectedProvinceName] = useState('');
+  const [selectedDistrictName, setSelectedDistrictName] = useState('');
+  const [selectedWardName, setSelectedWardName] = useState('');
+  const [detailsInput, setDetailsInput] = useState('');
   const location=useLocation();
   const {auth}=useContext(AuthContext)
   const from = location.state?.from || '';
@@ -34,19 +49,89 @@ function Checkout() {
   const [redeemPointsDraft, setRedeemPointsDraft] = useState('');
   const [redeemPoints, setRedeemPoints] = useState(0);
   const lastAppliedVoucherRef = useRef('');
+  const [changesModal, setChangesModal] = useState({
+    open: false,
+    changes: [],
+    validatedItems: null,
+  });
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
 
-  useEffect(  ()=>{
-   const fetchData = async () => {
-    const {  items } = location.state || {  items: [] };
-    setData(items);
-   try{ const info = await getAddressDefault(auth.user.email);
-    setAddress(info);}
-    catch(error){
-      console.log(error)
+  const provincePath = [selectedWardName, selectedDistrictName, selectedProvinceName]
+    .filter(Boolean)
+    .join(', ');
+  const mapQuery = `${detailsInput || ''} ${provincePath || ''} Việt Nam`.trim() || 'Việt Nam';
+  const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&hl=vi&z=14&output=embed`;
+  const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+
+  const resetAddressForm = () => {
+    setSelectedProvinceCode('');
+    setSelectedDistrictCode('');
+    setSelectedWardCode('');
+    setSelectedProvinceName('');
+    setSelectedDistrictName('');
+    setSelectedWardName('');
+    setDistricts([]);
+    setWards([]);
+    setDetailsInput('');
+  };
+
+  /// <summary>
+  /// Tải danh sách địa chỉ; ưu tiên giữ địa chỉ đang chọn, rồi mặc định, rồi phần tử đầu.
+  /// </summary>
+  const fetchAddresses = async (preserveSelected = true) => {
+    if (!auth?.user?.email) {
+      setAddresses([]);
+      setAddress(null);
+      return;
+    }
+    try {
+      const list = await getAddress(auth.user.email);
+      const normalizedList = Array.isArray(list) ? list : [];
+      setAddresses(normalizedList);
+      if (normalizedList.length === 0) {
+        setAddress(null);
+        return;
+      }
+      const currentSelectedId = preserveSelected ? address?._id : null;
+      const selectedByCurrent = normalizedList.find((item) => item._id === currentSelectedId);
+      const selectedByDefault = normalizedList.find((item) => item.isDefault);
+      setAddress(selectedByCurrent || selectedByDefault || normalizedList[0]);
+    } catch (error) {
+      setAddresses([]);
+      setAddress(null);
     }
   };
-  fetchData();
-},[auth?.user?.email, location.state])
+
+  useEffect(() => {
+    const { items } = location.state || { items: [] };
+    setData(items);
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!auth?.user?.email) return;
+    fetchAddresses(false);
+    (async () => {
+      try {
+        const info = await getAddressDefault(auth.user.email);
+        if (info) setAddress(info);
+      } catch (error) {
+        console.log(error);
+      }
+    })();
+  }, [auth?.user?.email]);
+
+  useEffect(() => {
+    async function loadProvinces() {
+      try {
+        const res = await fetch('https://provinces.open-api.vn/api/p/');
+        const json = await res.json();
+        setProvinces(Array.isArray(json) ? json : []);
+      } catch (error) {
+        setProvinces([]);
+      }
+    }
+    loadProvinces();
+  }, []);
 
   useEffect(() => {
     if (!auth?.user?.email) return;
@@ -148,60 +233,219 @@ function Checkout() {
     toast.success('Đã chọn dùng tối đa điểm hiện có');
   };
 
-  const handleOrder = async () =>{
-    if(address==null)
-    {
-      toast.error('Vui lòng thêm địa chỉ')
+  const handleChangeProvince = async (e) => {
+    const code = e.target.value;
+    setSelectedProvinceCode(code);
+    setSelectedDistrictCode('');
+    setSelectedWardCode('');
+    setSelectedDistrictName('');
+    setSelectedWardName('');
+    setWards([]);
+
+    const picked = provinces.find((p) => String(p.code) === String(code));
+    setSelectedProvinceName(picked?.name || '');
+
+    if (!code) {
+      setDistricts([]);
       return;
     }
-    const formData={
-      email:auth.user.email,
-      items:data,
-      voucherCode: voucherCode.trim() || undefined,
-      redeemPoints,
-      address:{
-        name:address.name,
-        phone:address.phone,
-        details:address.details,
-        province:address.province
-      }
+
+    try {
+      const res = await fetch(`https://provinces.open-api.vn/api/p/${code}?depth=2`);
+      const json = await res.json();
+      setDistricts(Array.isArray(json?.districts) ? json.districts : []);
+    } catch (error) {
+      setDistricts([]);
     }
-    console.log("form gửi đi khi đặt hàng là:",formData)
-   if(paymentMethod==0){ try {
-        const res=await axios.post('/api/order',formData)
-         console.log(res);
-        if(from === 'cart')
-        {
-          const cart = await getCart(auth.user.email)
-          const remainingItems = cart.items.filter(item => !item.selected);
-           await updateCart(auth.user.email, remainingItems);
-        }
-        navigate('/profile/purchase');
-        toast.success(res.message)
-    } catch(error){
-        toast.error('Đặt Hàng không thành công')
-    }}
-    else if (paymentMethod === 1) {
-      try {
-        const paymentUrl = await axios.post('/payapi/Momo', formData);
-        if (typeof paymentUrl === 'string' && paymentUrl.startsWith('http')) {
-          if (from === 'cart') {
-            sessionStorage.setItem('checkout_momo_clear_cart', auth.user.email);
-          }
-          window.location.href = paymentUrl;
-          return;
-        }
-        toast.error('Không nhận được link thanh toán MoMo');
-      } catch (error) {
-        const msg =
-          error?.response?.data?.message ||
-          error?.message ||
-          'Thanh toán MoMo thất bại';
-        toast.error(msg);
-      }
+  };
+
+  const handleChangeDistrict = async (e) => {
+    const code = e.target.value;
+    setSelectedDistrictCode(code);
+    setSelectedWardCode('');
+    setSelectedWardName('');
+
+    const picked = districts.find((d) => String(d.code) === String(code));
+    setSelectedDistrictName(picked?.name || '');
+
+    if (!code) {
+      setWards([]);
+      return;
     }
 
-  }
+    try {
+      const res = await fetch(`https://provinces.open-api.vn/api/d/${code}?depth=2`);
+      const json = await res.json();
+      setWards(Array.isArray(json?.wards) ? json.wards : []);
+    } catch (error) {
+      setWards([]);
+    }
+  };
+
+  const handleChangeWard = (e) => {
+    const code = e.target.value;
+    setSelectedWardCode(code);
+    const picked = wards.find((w) => String(w.code) === String(code));
+    setSelectedWardName(picked?.name || '');
+  };
+
+  /// <summary>
+  /// Thêm địa chỉ mới tại checkout (API tỉnh/huyện/xã + POST /api/address).
+  /// </summary>
+  const handleAddAddressAtCheckout = async (e) => {
+    e.preventDefault();
+    if (!selectedProvinceName || !selectedDistrictName || !selectedWardName) {
+      toast.error('Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã');
+      return;
+    }
+    const fullName = e.target.fullName.value;
+    const phone = e.target.phone.value;
+    const normalizedPhone = String(phone || '').replace(/\s+/g, '');
+    const phoneError = Validator.validatePhoneVn(normalizedPhone);
+    if (phoneError) {
+      toast.error('Số điện thoại không hợp lệ. Vui lòng nhập 10 số và bắt đầu bằng số 0.');
+      return;
+    }
+    const province = [selectedWardName, selectedDistrictName, selectedProvinceName].join(', ');
+    const detailsAdrs = e.target.detailsAdrs.value;
+    const formAddress = {
+      user: auth.user.email,
+      name: fullName,
+      phone: normalizedPhone,
+      province,
+      details: detailsAdrs,
+      isDefault: false,
+    };
+    try {
+      const res = await axios.post('/api/address', formAddress);
+      toast.success(res?.message || 'Thêm địa chỉ thành công');
+      await fetchAddresses(false);
+      setAddressModalOpen(false);
+      resetAddressForm();
+    } catch (error) {
+      toast.error('Thêm địa chỉ không thành công');
+    }
+  };
+
+  /// <summary>
+  /// Gửi đơn: COD (POST /api/order) hoặc MoMo (redirect + sessionStorage xóa giỏ sau thanh toán).
+  /// </summary>
+  const submitOrder = async (itemsToSubmit) => {
+    const formData = {
+      email: auth.user.email,
+      items: itemsToSubmit,
+      voucherCode: voucherCode.trim() || undefined,
+      redeemPoints,
+      address: {
+        name: address.name,
+        phone: address.phone,
+        details: address.details,
+        province: address.province,
+      },
+    };
+
+    if (paymentMethod === 0) {
+      const res = await axios.post('/api/order', formData);
+      if (from === 'cart') {
+        const cart = await getCart(auth.user.email);
+        const remainingItems = cart.items.filter((item) => !item.selected);
+        await updateCart(auth.user.email, remainingItems);
+      }
+      navigate('/profile/purchase');
+      toast.success(res.message);
+      return;
+    }
+
+    if (paymentMethod === 1) {
+      const paymentUrl = await axios.post('/payapi/Momo', formData);
+      if (typeof paymentUrl === 'string' && paymentUrl.startsWith('http')) {
+        if (from === 'cart') {
+          sessionStorage.setItem('checkout_momo_clear_cart', auth.user.email);
+        }
+        window.location.href = paymentUrl;
+        return;
+      }
+      toast.error('Không nhận được link thanh toán MoMo');
+    }
+  };
+
+  /// <summary>
+  /// Validate checkout trước khi đặt; nếu có thay đổi thì mở CheckoutChangesModal thay vì gửi đơn ngay.
+  /// </summary>
+  const handleOrder = async () => {
+    if (address == null) {
+      toast.error('Vui lòng thêm địa chỉ');
+      return;
+    }
+    if (!data?.length) {
+      toast.error('Không có sản phẩm để đặt hàng');
+      return;
+    }
+
+    setOrderSubmitting(true);
+    try {
+      const validation = await validateCheckoutItems(auth.user.email, data);
+
+      if (!validation.canProceed) {
+        setData(validation.validatedItems);
+        toast.error('Không thể đặt hàng: tất cả sách đã không còn khả dụng.');
+        return;
+      }
+
+      if (validation.hasChanges) {
+        setData(validation.validatedItems);
+        setChangesModal({
+          open: true,
+          changes: validation.changes,
+          validatedItems: validation.validatedItems,
+        });
+        return;
+      }
+
+      await submitOrder(data);
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Đặt hàng không thành công';
+      toast.error(msg);
+    } finally {
+      setOrderSubmitting(false);
+    }
+  };
+
+  /// <summary>
+  /// Người dùng chấp nhận thay đổi giá/tồn kho và tiếp tục đặt hàng với validatedItems.
+  /// </summary>
+  const handleConfirmOrderChanges = async () => {
+    const nextItems = changesModal.validatedItems;
+    if (!nextItems?.length) {
+      setChangesModal({ open: false, changes: [], validatedItems: null });
+      return;
+    }
+
+    setOrderSubmitting(true);
+    try {
+      setData(nextItems);
+      setChangesModal({ open: false, changes: [], validatedItems: null });
+      await submitOrder(nextItems);
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Đặt hàng không thành công';
+      toast.error(msg);
+    } finally {
+      setOrderSubmitting(false);
+    }
+  };
+
+  /// <summary>
+  /// Đóng dialog thay đổi; giữ dữ liệu đã cập nhật trên trang, không gửi đơn.
+  /// </summary>
+  const handleCancelOrderChanges = () => {
+    setChangesModal({ open: false, changes: [], validatedItems: null });
+  };
     return ( 
       <>
       <div className="grid">
@@ -209,18 +453,83 @@ function Checkout() {
           <div className={cx('checkout-info-customer')}>
             <div className={cx('checkout-info-content')}>
               <div className={cx('checkout-address-title')}>
-              <i className="fa-solid fa-location-dot"></i>
-              <span className={cx('address-title')}>Địa Chỉ Nhận Hàng</span>
+                <i className="fa-solid fa-location-dot"></i>
+                <span className={cx('address-title')}>Địa Chỉ Nhận Hàng</span>
               </div>
-              { address ? (
-                <div className={cx('checkout-info')}>
-                <span className={cx('checkout-name')}>{address.name}</span>
-                <span className={cx('checkout-phone')}>{address.phone}</span>
-                <span className={cx('checkout-address')}>{address.details} {address.province} </span>
-              <a href='/profile/address' className={cx('change-address-btn')}>Thay đổi</a>
-              </div>) : ( <><span className={cx('text')}>Chưa có địa chỉ </span>
-                <a href='/profile/address' className={cx('change-address-btn')}>Cập nhật</a></>)
-                }
+
+              <div className={cx('addressPanel')}>
+                {address ? (
+                  <div className={cx('addressDisplay')}>
+                    <div className={cx('addressDisplayTop')}>
+                      <span className={cx('checkout-name')}>{address.name}</span>
+                      <span className={cx('checkout-phone')}>{address.phone}</span>
+                      {address.isDefault && (
+                        <span className={cx('addressDefaultBadge')}>Mặc định</span>
+                      )}
+                    </div>
+                    <p className={cx('addressDisplayText')}>
+                      {address.details}, {address.province}
+                    </p>
+                  </div>
+                ) : (
+                  <div className={cx('addressEmpty')}>
+                    <div className={cx('addressEmptyIcon')}>
+                      <i className="fa-solid fa-map-location-dot" />
+                    </div>
+                    <p className={cx('addressEmptyTitle')}>Chưa có địa chỉ</p>
+                    <p className={cx('addressEmptyDesc')}>
+                      Thêm địa chỉ mới hoặc chọn địa chỉ có sẵn để tiếp tục đặt hàng
+                    </p>
+                  </div>
+                )}
+
+                <div className={cx('addressActions')}>
+                  <button
+                    type="button"
+                    className={cx('addressActionBtn', 'addressActionBtnPrimary')}
+                    onClick={() => {
+                      resetAddressForm();
+                      setAddressModalOpen(true);
+                    }}
+                  >
+                    <i className="fa-solid fa-plus" />
+                    Thêm địa chỉ mới
+                  </button>
+                  <button
+                    type="button"
+                    className={cx('addressActionBtn', showAddressSelect && 'addressActionBtnActive')}
+                    onClick={() => setShowAddressSelect((prev) => !prev)}
+                    disabled={!Array.isArray(addresses) || addresses.length === 0}
+                  >
+                    <i className="fa-solid fa-list" />
+                    Chọn địa chỉ có sẵn
+                  </button>
+                </div>
+
+                {Array.isArray(addresses) && addresses.length > 0 && showAddressSelect && (
+                  <div className={cx('addressSelectWrap')}>
+                    <label className={cx('addressSelectLabel')} htmlFor="checkout-address-select">
+                      Chọn địa chỉ giao hàng
+                    </label>
+                    <select
+                      id="checkout-address-select"
+                      className={cx('addressSelect')}
+                      value={address?._id || ''}
+                      onChange={(e) => {
+                        const selected = addresses.find((item) => item._id === e.target.value);
+                        if (selected) setAddress(selected);
+                      }}
+                    >
+                      {addresses.map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {item.name} — {item.phone} — {item.details}, {item.province}
+                          {item.isDefault ? ' (Mặc định)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
               <div className={cx('checkout-product')}>
@@ -360,7 +669,7 @@ function Checkout() {
                           <br />
                           <label className={cx('payment-item')}>
                             <input type="radio" name="my_radio_group" value="1" checked={paymentMethod === 1} onChange={() => { setPayMentMethod(1); }} />
-                            <img className={cx('logo-payment')} src={momo} alt="MoMo" /> MoMo (sandbox demo)
+                            <img className={cx('logo-payment')} src={momo} alt="MoMo" /> MoMo 
                           </label>
                           </div>
                        
@@ -408,14 +717,21 @@ function Checkout() {
                         </div>
                      </div>
                      <div className={`${cx('btn-total')}  `}>
-                      <button onClick={handleOrder} className="btn btn--primary">Đặt Hàng</button>
+                      <button
+                        type="button"
+                        onClick={handleOrder}
+                        className="btn btn--primary"
+                        disabled={orderSubmitting}
+                      >
+                        {orderSubmitting ? 'Đang xử lý...' : 'Đặt Hàng'}
+                      </button>
                      </div>
                       </div>  
               </div> 
             </div>
           </div>
           {voucherModalOpen && (
-            <div className={cx('voucherModalOverlay')} onClick={() => setVoucherModalOpen(false)}>
+            <div className={cx('voucherModalOverlay')} role="presentation">
               <div className={cx('voucherModalCard')} onClick={(e) => e.stopPropagation()}>
                 <div className={cx('voucherModalHeader')}>
                   <h3 className={cx('voucherModalTitle')}>Kho voucher của bạn</h3>
@@ -461,7 +777,115 @@ function Checkout() {
                 </div>
               </div>
             </div>
-          )}    
+          )}
+          {addressModalOpen && (
+            <form onSubmit={handleAddAddressAtCheckout}>
+              <div className="modal open" onClick={() => setAddressModalOpen(false)}>
+                <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+                  <div className='modal-header'>
+                    <h2 className='modal-title'>Thêm địa chỉ mới</h2>
+                    <button type="button" className="modal-close" onClick={() => setAddressModalOpen(false)}>
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className='address-modal'>
+                    <div className='address-modal-info'>
+                      <input name="fullName" className='address-modal-name' type="text" placeholder='Họ và tên' required />
+                      <input
+                        name="phone"
+                        className='address-modal-phone'
+                        type="tel"
+                        placeholder='Số điện thoại'
+                        required
+                        pattern="0[0-9]{9}"
+                        maxLength={10}
+                        title="Số điện thoại gồm 10 số và bắt đầu bằng số 0"
+                      />
+                    </div>
+                    <select
+                      name="province"
+                      className='Address-province'
+                      required
+                      value={selectedProvinceCode}
+                      onChange={handleChangeProvince}
+                    >
+                      <option value="">Chọn Tỉnh / Thành phố</option>
+                      {provinces.map((province) => (
+                        <option key={province.code} value={province.code}>
+                          {province.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className='Address-province'
+                      required
+                      value={selectedDistrictCode}
+                      onChange={handleChangeDistrict}
+                      disabled={!selectedProvinceCode}
+                    >
+                      <option value="">Chọn Quận / Huyện</option>
+                      {districts.map((district) => (
+                        <option key={district.code} value={district.code}>
+                          {district.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className='Address-province'
+                      required
+                      value={selectedWardCode}
+                      onChange={handleChangeWard}
+                      disabled={!selectedDistrictCode}
+                    >
+                      <option value="">Chọn Phường / Xã</option>
+                      {wards.map((ward) => (
+                        <option key={ward.code} value={ward.code}>
+                          {ward.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      name="detailsAdrs"
+                      className='Address-details'
+                      type="text"
+                      placeholder='Địa chỉ cụ thể (số nhà, đường...)'
+                      required
+                      value={detailsInput}
+                      onChange={(e) => setDetailsInput(e.target.value)}
+                    />
+                    <div className="address-map-box">
+                      <div className="address-map-header">
+                        <span className="address-map-title">Bản đồ giao hàng (Việt Nam)</span>
+                        <a href={mapSearchUrl} target="_blank" rel="noreferrer" className="address-map-open">
+                          Mở bản đồ lớn
+                        </a>
+                      </div>
+                      <iframe
+                        className="address-map-embed"
+                        src={mapEmbedUrl}
+                        title="Bản đồ địa chỉ giao hàng"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                    <div className='modal-address-btn'>
+                      <button type="button" className="btn modal-btn-back" onClick={() => setAddressModalOpen(false)}>
+                        Hủy
+                      </button>
+                      <button type="submit" className="btn btn--primary">Thêm địa chỉ</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          )}
+          <CheckoutChangesModal
+            open={changesModal.open}
+            changes={changesModal.changes}
+            loading={orderSubmitting}
+            onConfirm={handleConfirmOrderChanges}
+            onCancel={handleCancelOrderChanges}
+          />
       </>
      );
 }

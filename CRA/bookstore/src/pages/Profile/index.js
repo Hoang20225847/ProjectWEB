@@ -5,7 +5,9 @@ import axios from '../../components/axios/axios.customize'
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 import { getMyAccount } from '../../app/api/AccountApi';
+import { getUserReviews } from '../../app/api/ReviewApi';
 import { formatVndDisplay } from '../../components/function/function.js';
+import Validator from '../../components/function/Validator.js';
 
 function Profile() {
   const [isMember, setIsMember] = useState(false);
@@ -15,10 +17,10 @@ function Profile() {
   const [membershipProgress, setMembershipProgress] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
-  const [userData, setUserData] = useState({ name: '', phone: '0862408708' });
 
   const {auth, setAuth} = useContext(AuthContext);
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
 
   // Đồng bộ hội viên từ context (App.js gọi /api/account sau F5) — tránh nút "Đăng ký" sai khi API my đã đúng nhưng state local chưa cập nhật
   useEffect(() => {
@@ -43,11 +45,8 @@ function Profile() {
       try {
         const data = await getMyAccount();
         if (data?.user) {
-          setUserData({
-            name: data.user.name || '',
-            phone: data.user.phone || '0862408708'
-          });
           setName(data.user.name || '');
+          setPhone(data.user.phone || '');
           setIsMember(!!(data.user.isMember || data.user.membershipTier));
           setTierName(data.user.membershipTierName || '');
           setLoyaltyPoints(data.user.loyaltyPoints ?? 0);
@@ -67,10 +66,11 @@ function Profile() {
       if (!auth.user?.email) return;
       setLoadingReviews(true);
       try {
-        const response = await axios.get(`/api/reviews/user/${auth.user.email}`);
-        setReviews(response.data || []);
+        const rows = await getUserReviews(auth.user.email);
+        setReviews(rows);
       } catch (error) {
         console.error('Error fetching reviews:', error);
+        setReviews([]);
       } finally {
         setLoadingReviews(false);
       }
@@ -80,18 +80,36 @@ function Profile() {
 
   const handleChange= async (e)=>{
     e.preventDefault();
+    const trimmedName = name.trim();
+    const normalizedPhone = String(phone).replace(/\s+/g, '');
+    if (normalizedPhone) {
+      const phoneError = Validator.validatePhoneVn(normalizedPhone);
+      if (phoneError) {
+        toast.error('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
+        return;
+      }
+    }
     const formData={
       email:auth.user.email,
-      name:name
+      name:trimmedName,
+      phone:normalizedPhone,
     };
     try{
-      const data=await axios.post('/api/account',formData)
-      
-        toast.success("Cập nhật thành công")
-        window.location.reload();
+      const data=await axios.post('/api/account',formData);
+      setName(data?.user?.name ?? trimmedName);
+      setPhone(data?.user?.phone ?? normalizedPhone);
+      setAuth({
+        ...auth,
+        user: {
+          ...auth.user,
+          name: data?.user?.name ?? trimmedName,
+        },
+      });
+      toast.success("Cập nhật thành công");
     }
     catch(error){
-      toast.error(error)
+      const msg = error?.message || error?.response?.data?.message || 'Cập nhật thất bại';
+      toast.error(msg);
     }
     
   }
@@ -196,8 +214,15 @@ const handleAvatarChange = async(e)=>{
             <div className="Account-info-name">
               <span className="Account-info-text">Số Điện thoại</span>
                 <div className="Account-footer">
-                  <span className="Account-name-current">{userData.phone}</span>
-                  <button onClick={handleChange}  className="btn btn--size-s btn-account">Lưu</button>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="0xxxxxxxxx"
+                    onChange={(e) => setPhone(e.target.value)}
+                    value={phone}
+                    className="Account-name-current account-input-name"
+                  />
+                  <button type="button" onClick={handleChange} className="btn btn--size-s btn-account">Lưu</button>
                   </div>
               </div>
            
@@ -296,16 +321,19 @@ const handleAvatarChange = async(e)=>{
             </div>
           ) : (
             <div className="Reviews-list">
-              {reviews.map((review, idx) => (
-                <div key={idx} className="Review-item">
-                  <Link to={`/details/${encodeURIComponent(review.bookId.name)}`} className="Review-product-link">
+              {reviews.map((review) => {
+                const book = review.bookId;
+                if (!book?.name) return null;
+                return (
+                <div key={review._id} className="Review-item">
+                  <Link to={`/details/${encodeURIComponent(book.name)}`} className="Review-product-link">
                     <img 
-                      src={review.bookId.img} 
-                      alt={review.bookId.name}
+                      src={book.img} 
+                      alt={book.name}
                       className="Review-product-img"
                     />
                     <div className="Review-product-info">
-                      <h4 className="Review-product-name">{review.bookId.name}</h4>
+                      <h4 className="Review-product-name">{book.name}</h4>
                       <div className="Review-rating">
                         {[1,2,3,4,5].map(star => (
                           <span key={star} className={`Review-star ${star <= review.evaluate ? 'active' : ''}`}>
@@ -313,14 +341,15 @@ const handleAvatarChange = async(e)=>{
                           </span>
                         ))}
                       </div>
-                      <p className="Review-comment">{review.comment}</p>
+                      {review.comment ? <p className="Review-comment">{review.comment}</p> : null}
                       <span className="Review-date">
                         {new Date(review.createdAt).toLocaleDateString('vi-VN')}
                       </span>
                     </div>
                   </Link>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>

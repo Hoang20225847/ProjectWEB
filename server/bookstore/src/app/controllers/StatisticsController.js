@@ -739,12 +739,12 @@ class StatisticsController {
       const { revenue, orderCount, cogs, grossProfit, marginPct, aov, cogsOrd, cogsMov } = snap;
 
       let note =
-        'Đơn vị: đồng VNĐ (theo totalAmount đơn và giá vốn lưu trên dòng đơn / phiếu kho). Tiền vốn = max(COGS từ dòng đơn, COGS từ phiếu xuất bán stock_movements có importPrice). Dòng đơn: SL × (unitImportCost hoặc costPrice sách). Phiếu bán: SL × importPrice lúc xuất.';
+        '';
       if (revenue > 0 && cogs === 0) {
         note +=
-          ' COGS vẫn 0: cập nhật giá vốn (costPrice) / nhập kho có giá nhập; đơn mới lưu unitImportCost; đơn có trừ tồn cần importPrice trên movement bán (tạo khi đặt hàng có quản lý stock).';
+          ' ';
       } else if (revenue > 0 && cogsMov > cogsOrd) {
-        note += ' (Trong kỳ, vốn lấy chủ yếu từ biến động kho bán — đồng bộ với giá vốn lúc giao dịch.)';
+        note += '';
       }
 
       res.status(200).json({

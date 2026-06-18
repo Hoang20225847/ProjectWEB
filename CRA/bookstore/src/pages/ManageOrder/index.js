@@ -15,6 +15,7 @@ import { toast } from 'react-toastify';
 import { useSearchParams, Link } from 'react-router-dom';
 import { formatVndDisplay } from '../../components/function/function.js';
 import AdminSearchBar from '../../components/Layout/AdminLayout/AdminSearchBar.js';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind(styles);
 
@@ -73,6 +74,7 @@ function formatDateLineLabel(dateKey) {
 }
 
 function ManageOrder() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [searchParams, setSearchParams] = useSearchParams();
   const openedOrderIdRef = useRef(null);
   const [data, setData] = useState(null);
@@ -166,8 +168,9 @@ function ManageOrder() {
     openedOrderIdRef.current = null;
   };
 
-  const handleDelete = (order) => {
-    if (!window.confirm(`Xóa đơn hàng "${order._id}"?`)) return;
+  const handleDelete = async (order) => {
+    const ok = await confirmDelete({ title: 'Xóa đơn hàng', itemName: order._id });
+    if (!ok) return;
     removeOrder(order._id);
     setData((prev) => prev.filter((item) => item._id !== order._id));
     toast.success('Đã xóa đơn hàng');
@@ -557,6 +560,7 @@ function ManageOrder() {
       {showEditModal && (
         <EditOrderModal order={editOrder} onClose={closeEditModal} onSave={handleSave} />
       )}
+      <ConfirmDeleteDialog />
     </div>
   );
 }

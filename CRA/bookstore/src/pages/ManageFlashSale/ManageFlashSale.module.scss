@@ -757,25 +757,54 @@
 .itemPercentBox {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  height: 36px;
+  min-width: 72px;
+  padding: 0 10px;
   background: linear-gradient(135deg, #fee2e2 0%, #fff7ed 100%);
   border: 1px solid var(--flash-border);
-  padding: 6px 12px;
-  border-radius: 10px;
-  color: var(--flash-primary-strong);
-  font-weight: 700;
-  flex-shrink: 0;
+  border-radius: 8px;
+  color: #7c2d12;
+  font-size: 1.3rem;
+  font-weight: 600;
+  box-sizing: border-box;
+
+  > span {
+    flex-shrink: 0;
+    line-height: 1;
+  }
 }
 
 .percentInput {
-  width: 48px;
+  width: 100%;
+  min-width: 0;
+  max-width: 44px;
+  height: 100%;
   border: none;
   background: transparent;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--flash-primary-strong);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #0f172a;
   text-align: center;
   outline: none;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:focus {
+    color: var(--flash-primary-strong);
+  }
 
   &:disabled {
     color: #94a3b8;
@@ -901,24 +930,60 @@
 .bulkInputBox {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  height: 36px;
+  min-width: 72px;
+  padding: 0 10px;
   background: #ffffff;
   border: 1px solid var(--flash-border);
-  padding: 6px 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--flash-primary-strong);
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 600;
+  box-sizing: border-box;
+
+  > span {
+    flex-shrink: 0;
+    line-height: 1;
+    color: #7c2d12;
+  }
 }
 
 .bulkInput {
-  width: 56px;
+  width: 100%;
+  min-width: 0;
+  max-width: 44px;
+  height: 100%;
   border: none;
   background: transparent;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--flash-primary-strong);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #0f172a;
   text-align: center;
   outline: none;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:focus {
+    color: var(--flash-primary-strong);
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+    font-weight: 500;
+  }
 }
 
 .bulkBtn {
@@ -1002,37 +1067,63 @@
 }
 
 .flashPercentLabel {
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   color: #7c2d12;
   text-transform: uppercase;
+  line-height: 1.2;
 }
 
 .flashPercentInputWrap {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
-  font-size: 1.6rem;
-  font-weight: 900;
-  color: var(--flash-primary-strong);
+  height: 34px;
+  min-width: 68px;
+  padding: 0 8px;
+  background: #ffffff;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 8px;
+  box-sizing: border-box;
+
+  > span {
+    flex-shrink: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #7c2d12;
+  }
 }
 
 .flashPercentInput {
-  width: 56px;
+  width: 100%;
+  min-width: 0;
+  max-width: 40px;
+  height: 100%;
   border: none;
   background: transparent;
-  font-size: 1.6rem;
-  font-weight: 900;
-  color: var(--flash-primary-strong);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #0f172a;
   text-align: center;
   outline: none;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
   -moz-appearance: textfield;
+  appearance: textfield;
 
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
+  }
+
+  &:focus {
+    color: var(--flash-primary-strong);
   }
 
   &:disabled {

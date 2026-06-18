@@ -21,6 +21,28 @@ function requireAdmin(req, res) {
   return false;
 }
 
+function isVoucherExpiredByDate(endsAt, now = new Date()) {
+  if (!endsAt) return false;
+  return new Date(endsAt).getTime() < now.getTime();
+}
+
+async function deactivateExpiredVouchers(filter = {}) {
+  const now = new Date();
+  await Voucher.updateMany(
+    { ...filter, active: true, endsAt: { $lt: now } },
+    { $set: { active: false } },
+  );
+}
+
+function enrichVoucherRow(row, now = new Date()) {
+  const isExpired = isVoucherExpiredByDate(row?.endsAt, now);
+  return {
+    ...row,
+    isExpired,
+    active: isExpired ? false : !!row.active,
+  };
+}
+
 class MembershipController {
   constructor() {
     this.normalizeTierSlugs = this.normalizeTierSlugs.bind(this);
@@ -85,6 +107,9 @@ class MembershipController {
       if (body.maxUsesPerAccount === '' || body.maxUsesPerAccount == null) body.maxUsesPerAccount = null;
       else body.maxUsesPerAccount = Math.max(1, Math.round(Number(body.maxUsesPerAccount) || 1));
     }
+    if ('endsAt' in body && body.endsAt && isVoucherExpiredByDate(body.endsAt)) {
+      body.active = false;
+    }
     return body;
   }
 
@@ -143,7 +168,7 @@ class MembershipController {
           'voucher',
           'Bạn có voucher mới',
           `Voucher ${voucher.code} vừa được phát hành: ${voucher.title}`,
-          '/checkout',
+          '/profile/vouchers',
           null,
           null,
           null,
@@ -328,6 +353,7 @@ class MembershipController {
   async adminListVouchers(req, res, next) {
     try {
       if (requireAdmin(req, res)) return;
+      await deactivateExpiredVouchers();
       const q = {};
       if (req.query.code) {
         q.code = new RegExp(String(req.query.code).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
@@ -350,7 +376,8 @@ class MembershipController {
         .populate('eligibleBookIds', 'name')
         .sort({ createdAt: -1 })
         .lean();
-      return res.json(rows);
+      const now = new Date();
+      return res.json(rows.map((row) => enrichVoucherRow(row, now)));
     } catch (e) {
       next(e);
     }
@@ -360,9 +387,12 @@ class MembershipController {
     try {
       if (requireAdmin(req, res)) return;
       const body = this.normalizeVoucherPayload(req.body);
+      if (isVoucherExpiredByDate(body.endsAt)) {
+        body.active = false;
+      }
       const doc = await Voucher.create(body);
       await this.publishPublicVoucherToWallet(doc);
-      return res.status(201).json(doc);
+      return res.status(201).json(enrichVoucherRow(doc.toObject ? doc.toObject() : doc));
     } catch (e) {
       next(e);
     }
@@ -373,12 +403,25 @@ class MembershipController {
       if (requireAdmin(req, res)) return;
       const { id } = req.params;
       if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'ID không hợp lệ' });
+      const existing = await Voucher.findById(id).lean();
+      if (!existing) return res.status(404).json({ message: 'Không tìm thấy' });
+
       const patch = this.normalizeVoucherPayload(req.body, { partial: true });
       delete patch._id;
+
+      const endsAt = patch.endsAt != null ? patch.endsAt : existing.endsAt;
+      const expired = isVoucherExpiredByDate(endsAt);
+      if (expired) {
+        patch.active = false;
+        if (req.body.active === true) {
+          return res.status(400).json({ message: 'Voucher đã hết hạn, không thể bật trạng thái.' });
+        }
+      }
+
       const doc = await Voucher.findByIdAndUpdate(id, { $set: patch }, { new: true }).lean();
       if (!doc) return res.status(404).json({ message: 'Không tìm thấy' });
       await this.publishPublicVoucherToWallet(doc);
-      return res.json(doc);
+      return res.json(enrichVoucherRow(doc));
     } catch (e) {
       next(e);
     }

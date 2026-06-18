@@ -9,7 +9,7 @@ const cx = classNames.bind(styles);
 
 const TABS = [
   { id: 'tiers', label: 'Hạng (Tier)' },
-  { id: 'benefits', label: 'Ưu đãi (Benefit)' },
+ 
   { id: 'logs', label: 'Lịch sử nâng hạng' },
   { id: 'points', label: 'Giao dịch điểm' },
 ];
@@ -160,7 +160,6 @@ function ManageMembership() {
                         <thead>
                           <tr>
                             <th>Hạng</th>
-                            <th>Slug</th>
                             <th style={{ textAlign: 'right' }}>Số tài khoản</th>
                             <th>Cấu hình hạng</th>
                           </tr>
@@ -169,7 +168,6 @@ function ManageMembership() {
                           {(tierAccountStats.byTier || []).map((row) => (
                             <tr key={String(row.tierId)}>
                               <td>{row.name}</td>
-                              <td>{row.slug}</td>
                               <td style={{ textAlign: 'right', fontWeight: 700 }}>{row.accountCount}</td>
                               <td>{row.active ? 'Đang bật' : 'Tắt'}</td>
                             </tr>
@@ -194,7 +192,6 @@ function ManageMembership() {
                     <div className={cx('membershipTierTop')}>
                       <div className={cx('membershipTierMeta')}>
                         <div className={cx('membershipTierTitle')}>{t.name}</div>
-                        <div className={cx('membershipTierSlug')}>slug: {t.slug}</div>
                       </div>
                       <label className={cx('membershipTierField')}>
                         <span className={cx('membershipFieldLabel')}>Giảm %</span>

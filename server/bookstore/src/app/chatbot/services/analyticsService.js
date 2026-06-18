@@ -192,7 +192,8 @@ async function recentFeedback(req) {
     $or: [
       { rating: { $ne: null } },
       { issueResolved: { $in: ['yes', 'no', 'partial'] } },
-      { feedback: { $ne: '' } },
+      { feedback: { $exists: true, $nin: ['', null] } },
+      { feedbackSkipped: true },
     ],
   };
   if (req?.query?.issueResolved) {

@@ -1,6 +1,8 @@
   import axios from'../../components/axios/axios.customize'
 
-  /** @returns {{ items: any[], removedFromCart: any[] }} */
+  /// <summary>
+  /// Lấy giỏ hàng; server có thể trả removedFromCart khi đồng bộ tồn kho/giá.
+  /// </summary>
   export async function getCart(email) {
     try {
       const data = await axios.get(`/api/cart?email=${email}`);
@@ -16,9 +18,12 @@
       return { items: [], removedFromCart: [] };
     }
   }
+
+  /// <summary>
+  /// Ghi đè toàn bộ items giỏ hàng (dùng sau checkout hoặc chỉnh SL hàng loạt).
+  /// </summary>
  export async function updateCart(email,updateData) {
     try {
-      
       const data = await axios.put(`/api/cart/update`,{email,item:updateData});
         console.log(data);
     } catch (err) {
@@ -26,9 +31,12 @@
       throw err
     }
   }
+
+  /// <summary>
+  /// Xóa một dòng khỏi giỏ theo bookId.
+  /// </summary>
   export async function removeItemCart(email,id) {
     try {
-      
       const data = await axios.put(`/api/cart`,{email,id});
         console.log(data);
     } catch (err) {
@@ -37,7 +45,27 @@
     }
   }
 
-  /** Gọi sau getCart khi server trả `removedFromCart` (hết hàng / gỡ dòng / chỉnh SL). */
+  /// <summary>
+  /// Kiểm tra đơn trước khi đặt hàng; trả hasChanges, canProceed, changes[], validatedItems[].
+  /// </summary>
+  export async function validateCheckoutItems(email, items) {
+    try {
+      const data = await axios.post('/api/cart/validate-checkout', { email, items });
+      return {
+        hasChanges: !!data?.hasChanges,
+        canProceed: !!data?.canProceed,
+        changes: Array.isArray(data?.changes) ? data.changes : [],
+        validatedItems: Array.isArray(data?.validatedItems) ? data.validatedItems : [],
+      };
+    } catch (err) {
+      console.error('Lỗi validate checkout:', err);
+      throw err;
+    }
+  }
+
+  /// <summary>
+  /// Hiển thị toast khi getCart trả removedFromCart (hết hàng, chỉnh SL, ngừng bán).
+  /// </summary>
   export function notifyCartRemovedFromCart(removedFromCart, toast) {
     if (!removedFromCart?.length || !toast) return;
     const gone = removedFromCart.filter((r) =>
@@ -55,4 +83,3 @@
       );
     }
   }
-

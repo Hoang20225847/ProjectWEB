@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 const cx = classNames.bind(styles);
 
 function EditAccountModal({ account, onClose, onSave }) {
+  const isAdminAccount = account?.accountKind === 'admin';
   const [formData, setFormData] = useState({
     name: account.name,
     password: '',
@@ -28,13 +29,20 @@ function EditAccountModal({ account, onClose, onSave }) {
   };
 
   return (
-    <div className={cx('modalOverlay')} onClick={onClose}>
+    <div className={cx('modalOverlay')} role="presentation">
       <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className={cx('modalHeader')} style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+        <div
+          className={cx('modalHeader')}
+          style={{
+            background: isAdminAccount
+              ? 'linear-gradient(135deg, #6366f1, #4f46e5)'
+              : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+          }}
+        >
           <h3>
-            <i className="fa-solid fa-user-pen" style={{ marginRight: 8 }} />
-            Sửa Tài Khoản
+            <i className={`fa-solid ${isAdminAccount ? 'fa-user-shield' : 'fa-user-pen'}`} style={{ marginRight: 8 }} />
+            {isAdminAccount ? 'Sửa Quản Trị Viên' : 'Sửa Khách Hàng'}
           </h3>
           <button type="button" className={cx('modalClose')} onClick={onClose}>
             <i className="fa-solid fa-xmark" />
@@ -44,7 +52,12 @@ function EditAccountModal({ account, onClose, onSave }) {
         {/* Body */}
         <form onSubmit={handleSubmit} className={cx('modalBody')}>
           <div className={cx('formGroup')}>
-            <label>Tên người dùng</label>
+            <label>Email</label>
+            <input className={cx('input')} type="email" value={account.email} disabled />
+          </div>
+
+          <div className={cx('formGroup')}>
+            <label>{isAdminAccount ? 'Tên quản trị' : 'Tên khách hàng'}</label>
             <input
               name="name"
               className={cx('input')}

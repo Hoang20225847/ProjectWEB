@@ -5,10 +5,12 @@ import axios from '../../components/axios/axios.customize.js';
 import { getBookList } from '../../app/api/siteApi.js';
 import { toast } from 'react-toastify';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind(styles);
 
 function ManageSeries() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [rows, setRows] = useState(null);
   const [nameFilter, setNameFilter] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -83,7 +85,12 @@ function ManageSeries() {
   };
 
   const handleDelete = async (row) => {
-    if (!window.confirm(`Xóa series "${row.name}"? Sách trong series sẽ được gỡ khỏi series.`)) return;
+    const ok = await confirmDelete({
+      title: 'Xóa series',
+      itemName: row.name,
+      warning: 'Sách trong series sẽ được gỡ khỏi series.',
+    });
+    if (!ok) return;
     try {
       await axios.delete(`/api/series/${row._id}`);
       toast.success('Đã xóa series');
@@ -237,7 +244,7 @@ function ManageSeries() {
       </div>
 
       {editRow && (
-        <div className={cx('modalOverlay')} onClick={() => setEditRow(null)}>
+        <div className={cx('modalOverlay')} role="presentation">
           <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
             <div className={cx('modalHeader')}>
               <h3>Sửa series</h3>
@@ -294,7 +301,7 @@ function ManageSeries() {
       )}
 
       {membersSeries && (
-        <div className={cx('modalOverlay')} onClick={() => !savingMembers && setMembersSeries(null)}>
+        <div className={cx('modalOverlay')} role="presentation">
           <div
             className={`${cx('modalContent')} ${cx('resourceCatalogMemberModal')}`}
             onClick={(e) => e.stopPropagation()}
@@ -339,6 +346,7 @@ function ManageSeries() {
           </div>
         </div>
       )}
+      <ConfirmDeleteDialog />
     </div>
   );
 }

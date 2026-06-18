@@ -29,7 +29,7 @@ function AddCategoryModal({ onClose, onAddSuccess }) {
   };
 
   return (
-    <div className={cx('modalOverlay')} onClick={onClose}>
+    <div className={cx('modalOverlay')} role="presentation">
       <div className={cx('modalContent')} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={cx('modalHeader')} style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>

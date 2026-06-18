@@ -11,6 +11,7 @@ const cx = classNames.bind(styles)
 function Navbar() {
     const[filter,setFilter]= useState(0)
     const {auth}=useContext(AuthContext)
+    const location = useLocation();
 
     return ( 
         
@@ -53,6 +54,16 @@ function Navbar() {
 
                                     setFilter(3);
                                 }} to="/profile/purchase" className={`${cx('Nav-list-name')} ${filter == 3 ? 'input--primary' : ''}`}>Lịch Sử Đơn hàng</Link>
+                            </div>
+                            <div className={(cx('Nav-list-title'))}>
+                            <i className="fa-solid fa-chart-line user-icon"></i>
+                            <Link
+                                onClick={() => setFilter(4)}
+                                to="/statistics"
+                                className={`${cx('Nav-list-name')} ${location.pathname === '/statistics' || filter === 4 ? 'input--primary' : ''}`}
+                            >
+                                Thống kê
+                            </Link>
                             </div>
                             <div className={(cx('Nav-list-title'))}>
                             <i className="fa-solid fa-ticket user-icon"></i>

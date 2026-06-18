@@ -10,6 +10,17 @@ import { resolveMediaUrl } from '../../config/api';
 
 const cx = classNames.bind({ ...adminStyles, ...pageStyles });
 
+function isVoucherExpired(voucher) {
+  if (voucher?.isExpired) return true;
+  if (!voucher?.endsAt) return false;
+  return new Date(voucher.endsAt).getTime() < Date.now();
+}
+
+function voucherStatusLabel(voucher) {
+  if (isVoucherExpired(voucher)) return 'Đã hết hạn';
+  return voucher.active ? 'Đang bật' : 'Đang tắt';
+}
+
 function ManageVoucher() {
   const [tiers, setTiers] = useState([]);
   const [vouchers, setVouchers] = useState([]);
@@ -189,12 +200,17 @@ function ManageVoucher() {
   };
 
   const toggleVoucherActive = async (voucher) => {
+    if (isVoucherExpired(voucher)) {
+      toast.info('Voucher đã hết hạn, không thể thay đổi trạng thái');
+      return;
+    }
     try {
       await axios.put(`/api/membership/admin/vouchers/${voucher._id}`, { active: !voucher.active });
       toast.success(voucher.active ? 'Đã tắt voucher' : 'Đã bật voucher');
       await loadVouchers();
-    } catch {
-      toast.error('Không cập nhật được trạng thái voucher');
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Không cập nhật được trạng thái voucher';
+      toast.error(msg);
     }
   };
 
@@ -404,7 +420,9 @@ function ManageVoucher() {
                   </tr>
                 </thead>
                 <tbody>
-                  {vouchers.map((v) => (
+                  {vouchers.map((v) => {
+                    const expired = isVoucherExpired(v);
+                    return (
                     <tr key={v._id}>
                       <td>{v.code}</td>
                       <td>{v.title}</td>
@@ -412,11 +430,22 @@ function ManageVoucher() {
                       <td>{v.audienceType === 'all' ? 'Tất cả' : v.audienceType === 'member' ? 'Hội viên' : `Hạng: ${(v.tierSlugs || []).join(', ') || '—'}`}</td>
                       <td>{v.applyAllBooks ? 'Mọi sách' : `${(v.eligibleBookIds || []).length} sách`}</td>
                       <td>{v.maxDiscountDong != null ? `${Number(v.maxDiscountDong).toLocaleString('vi-VN')}đ` : 'Không giới hạn'}</td>
-                      <td>{v.endsAt ? new Date(v.endsAt).toLocaleString('vi-VN') : '—'}</td>
+                      <td className={cx({ cellExpired: expired })}>
+                        {v.endsAt ? new Date(v.endsAt).toLocaleString('vi-VN') : '—'}
+                      </td>
                       <td>{v.redemptionCount || 0}</td>
                       <td>
-                        <button type="button" className={cx('stateBtn', { stateBtnOff: !v.active })} onClick={() => toggleVoucherActive(v)}>
-                          {v.active ? 'Đang bật' : 'Đang tắt'}
+                        <button
+                          type="button"
+                          className={cx('stateBtn', {
+                            stateBtnOff: !v.active && !expired,
+                            stateBtnExpired: expired,
+                          })}
+                          disabled={expired}
+                          title={expired ? 'Voucher đã hết hạn, không thể đổi trạng thái' : undefined}
+                          onClick={() => toggleVoucherActive(v)}
+                        >
+                          {voucherStatusLabel(v)}
                         </button>
                       </td>
                       <td>
@@ -425,14 +454,15 @@ function ManageVoucher() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
 
           {bookModalOpen && (
-            <div className={cx('bookModalOverlay')} onClick={() => setBookModalOpen(false)}>
+            <div className={cx('bookModalOverlay')} role="presentation">
               <div className={cx('bookModalCard')} onClick={(e) => e.stopPropagation()}>
                 <h4>Chọn sách được áp dụng voucher</h4>
                 <div className={cx('bookModalToolbar')}>

@@ -1,6 +1,8 @@
 import axios from '../../components/axios/axios.customize';
 
-/** audience: 'user' (mặc định, storefront) | 'admin' (chuông trang quản trị) */
+/// <summary>
+/// Danh sách thông báo phân trang; audience 'user' (storefront) hoặc 'admin'.
+/// </summary>
 export async function getNotifications(email, page = 1, limit = 20, audience = 'user') {
     try {
         const aud = audience === 'admin' ? 'admin' : 'user';
@@ -18,6 +20,9 @@ export async function getNotifications(email, page = 1, limit = 20, audience = '
     }
 }
 
+/// <summary>
+/// Số thông báo chưa đọc theo audience (user/admin).
+/// </summary>
 export async function getUnreadCount(email, audience = 'user') {
     try {
         const aud = audience === 'admin' ? 'admin' : 'user';
@@ -40,6 +45,9 @@ export async function markAsRead(id) {
     }
 }
 
+/// <summary>
+/// Đánh dấu tất cả đã đọc cho email + audience.
+/// </summary>
 export async function markAllAsRead(email, audience = 'user') {
     try {
         const aud = audience === 'admin' ? 'admin' : 'user';
@@ -59,6 +67,20 @@ export async function deleteNotification(id) {
         console.error('Lỗi khi xóa notification:', err);
         throw err;
     }
+}
+
+/// <summary>
+/// Xóa toàn bộ thông báo của email theo audience.
+/// </summary>
+/// <summary>
+/// Đường dẫn điều hướng khi bấm thông báo (sửa link voucher cũ trỏ nhầm checkout).
+/// </summary>
+export function getNotificationNavigationPath(notification) {
+    if (!notification?.link) return null;
+    if (notification.type === 'voucher' && notification.link === '/checkout') {
+        return '/profile/vouchers';
+    }
+    return notification.link;
 }
 
 export async function deleteAllNotifications(email, audience = 'user') {

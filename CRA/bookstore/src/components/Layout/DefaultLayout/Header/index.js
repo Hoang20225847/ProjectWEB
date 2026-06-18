@@ -5,7 +5,7 @@ import './header-theme.css'
 import logo from '../../../assets/img/logo.png'
 import {getCart, notifyCartRemovedFromCart} from '../../../../app/api/CartApi'
 import { toast } from 'react-toastify';
-import {getNotifications, markAsRead, markAllAsRead, deleteNotification} from '../../../../app/api/NotificationApi'
+import {getNotifications, markAsRead, markAllAsRead, deleteNotification, getNotificationNavigationPath} from '../../../../app/api/NotificationApi'
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { useContext, useEffect, useState, useRef, useCallback } from 'react'
 import {
@@ -16,13 +16,15 @@ import {
 } from '../../../../utils/searchHistory.js';
 import { AuthContext } from '../../../context/auth.context'
 import { ThemeContext } from '../../../context/theme.context';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { formatVndDisplay } from '../../../function/function.js';
 import shoppingno from '../../../assets/img/shopping.png'
 import styles from '../../../../pages/Home/Home.module.scss';
 
 function Header() {
     const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const isCatalogBrowse = pathname === '/search' || pathname === '/flash-sale';
    const { auth, setAuth } = useContext(AuthContext);
    const { theme, setTheme } = useContext(ThemeContext);
    const [data, setData] = useState(null);
@@ -132,8 +134,9 @@ function Header() {
     if (!notification.isRead) {
       handleMarkAsRead(notification._id, { stopPropagation: () => {} });
     }
-    if (notification.link) {
-      navigate(notification.link);
+    const path = getNotificationNavigationPath(notification);
+    if (path) {
+      navigate(path);
     }
     // Không cần đóng dropdown vì đã dùng CSS hover
   };
@@ -155,12 +158,13 @@ function Header() {
         case 'order_status': return 'fa-solid fa-truck-fast';
         case 'payment': return 'fa-solid fa-credit-card';
         case 'review': return 'fa-solid fa-star-half-stroke';
+        case 'voucher': return 'fa-solid fa-ticket';
         default: return 'fa-solid fa-bell';
     }
   };
 
   const getNotificationTypeClass = (type) => {
-    const allowed = ['cart', 'order', 'order_status', 'payment', 'review'];
+    const allowed = ['cart', 'order', 'order_status', 'payment', 'review', 'voucher'];
     return allowed.includes(type) ? type : 'default';
   };
   
@@ -220,7 +224,7 @@ function Header() {
       <header className="header">
         <div className="grid">
           {/* Top Row: Logo + Search + Navbar Items */}
-          <div className="header__top-row">
+          <div className={`header__top-row${isCatalogBrowse ? ' header__top-row--no-search' : ''}`}>
             <div className="header__logo">
               <a href="/" className="header__logo-link">
                 <img src={logo} alt="" className="header__logo-img"/>
@@ -228,6 +232,7 @@ function Header() {
               </a>
             </div>
             
+            {!isCatalogBrowse && (
             <form className="header__search" onSubmit={handleSearch} ref={searchWrapRef}>
               <div className="header__search-input-wrap">
                 <input
@@ -289,6 +294,7 @@ function Header() {
                 <i className="header__search-btn-icon fa-solid fa-magnifying-glass" aria-hidden />
               </button>
             </form>
+            )}
             
             {/* Navbar items bên phải */}
             <div className="header__navbar-right">
@@ -299,7 +305,7 @@ function Header() {
                     {unreadCount > 0 && <span className="header__badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
                   </a>
                   <div className="header__notify">
-                    <header className="header_notify-header">
+                    <header className="header__notify-header">
                       <h3>Thông báo mới</h3>
                       {unreadCount > 0 && (
                         <button className="mark-all-read-btn" onClick={handleMarkAllRead}>Đánh dấu tất cả</button>
@@ -350,7 +356,9 @@ function Header() {
                 <li className="header__navbar-item header__navbar-item--has-cart">
                   <a href="/cart" className="header__navbar-item-link">
                     <i className="header__navbar-icon fa-solid fa-cart-shopping"></i>
-                    <span className="header__badge">{data ? data.length : 0}</span>
+                    {(data?.length || 0) > 0 && (
+                      <span className="header__badge">{data.length > 99 ? '99+' : data.length}</span>
+                    )}
                   </a>
                   <div className="header__cart-dropdown">
                     { !data || data.length === 0 ? (
@@ -443,17 +451,18 @@ function Header() {
               </ul>
             </div>
           </div>
-          {/* Danh mục sách - sticky nav dưới header */}
+          {/* Danh mục sách — ẩn trên /search (đã có sidebar danh mục & bộ lọc) */}
+          {!isCatalogBrowse && (
           <div className={styles.homeNav}>
             <div className={styles.homeNavInner}>
               <a href="/" className={styles.homeNavLink}>
                 <i className="fa-solid fa-home"></i>
                 Trang chủ
               </a>
-              <a href="/search" className={styles.homeNavLink}>
+              {/* <a href="/search" className={styles.homeNavLink}>
                 <i className="fa-solid fa-book"></i>
-                Tất cả sách
-              </a>
+                
+              </a> */}
               {categories.slice(0, 5).map((c) => (
                 <a key={c._id} href={`/search?category=${encodeURIComponent(c.slug)}`} className={styles.homeNavLink}>
                   {c.name}
@@ -465,6 +474,7 @@ function Header() {
               </a>
             </div>
           </div>
+          )}
         </div>
       </header>
     );

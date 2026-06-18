@@ -3,6 +3,7 @@ import axios from '../../components/axios/axios.customize';
 import styles from './ManageInventory.module.scss';
 import { Link } from 'react-router-dom';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const formatCurrency = (valueDong) => {
   const n = Number(valueDong) || 0;
@@ -54,6 +55,7 @@ const ROW_BADGE = {
 };
 
 function ManageInventory() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [tab, setTab] = useState('list');
   const [dashboard, setDashboard] = useState(null);
   const [invBooks, setInvBooks] = useState([]);
@@ -277,15 +279,23 @@ function ManageInventory() {
     setTab('import');
   };
 
+  /// <summary>
+  /// Kiểm tra phiếu nhập đã được hoàn tác (note chứa tag __REV_IMPORT__).
+  /// </summary>
   const importMovementReversed = (mov, all) => {
     const tag = `__REV_IMPORT__:${String(mov._id)}__`;
     return (all || []).some((x) => typeof x.note === 'string' && x.note.startsWith(tag));
   };
 
+  /// <summary>
+  /// Hoàn tác nhập kho: gọi API reverse và cảnh báo nếu costPriceNote thay đổi.
+  /// </summary>
   const handleReverseImport = async (m) => {
-    const ok = window.confirm(
-      `Hoàn tác phiếu nhập +${m.quantity} cuốn cho "${m.bookId?.name || 'sách'}"?\nTồn sẽ giảm lại và ghi biến động điều chỉnh.`
-    );
+    const ok = await confirmDelete({
+      title: 'Hoàn tác phiếu nhập',
+      message: `Hoàn tác phiếu nhập +${m.quantity} cuốn cho "${m.bookId?.name || 'sách'}"?\nTồn sẽ giảm lại và ghi biến động điều chỉnh.`,
+      confirmLabel: 'Hoàn tác',
+    });
     if (!ok) return;
     try {
       const res = await axios.post('/api/inventory/stock-import/reverse', {
@@ -779,6 +789,7 @@ function ManageInventory() {
           )}
         </>
       )}
+      <ConfirmDeleteDialog />
     </div>
   );
 }

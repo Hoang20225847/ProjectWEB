@@ -1,7 +1,10 @@
   import axios from'../../components/axios/axios.customize'
+
+  /// <summary>
+  /// Địa chỉ của email (lọc client-side từ GET /api/address).
+  /// </summary>
   export async function getAddress(email) {
     try {
-      
       const data = await axios.get(`/api/address`);
       const found=data.filter(address =>address.email === email)
        console.log(found) 
@@ -11,9 +14,12 @@
       console.error('Lỗi khi lấy dữ liệu:', err);
     }
   }
+
+  /// <summary>
+  /// Địa chỉ mặc định của email; undefined nếu chưa đặt mặc định.
+  /// </summary>
   export async function getAddressDefault(email) {
     try {
-      
       const data = await axios.get(`/api/address`);
       const found=data.find(address =>address.email === email && address.isDefault === true) 
         return found
@@ -21,23 +27,27 @@
       console.error('Lỗi khi lấy dữ liệu:', err);
     }
   }
+
+  /// <summary>
+  /// Đặt một địa chỉ làm mặc định (PUT /api/address/:id).
+  /// </summary>
   export async function setAddressDefault(id) {
     try {
-      
         await axios.put(`/api/address/${id}`);
           console.log('Set Dia chi thanh cong')
     } catch (err) {
       console.error('Lỗi khi lấy dữ liệu:', err);
     }
   }
+
+  /// <summary>
+  /// Xóa địa chỉ theo id.
+  /// </summary>
   export async function deleteAddress(id) {
     try {
-      
         await axios.delete(`/api/address/${id}`);
           console.log('Xoa Dia chi thanh cong')
     } catch (err) {
       console.error('Lỗi khi lấy dữ liệu:', err);
     }
   }
-
-

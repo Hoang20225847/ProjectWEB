@@ -275,15 +275,15 @@
   gap: 10px 14px;
   margin-bottom: 14px;
   padding: 10px 12px;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  border: 1px solid #334155;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 
 .searchToolbarLabel {
   font-size: 1.35rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin-right: 4px;
 }
 
@@ -301,9 +301,9 @@
   min-width: 0;
   padding: 0 14px;
   border-radius: 8px;
-  border: 1px solid #475569;
-  background: rgba(30, 41, 59, 0.6);
-  color: #e2e8f0;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   font-size: 1.32rem;
   font-weight: 600;
   cursor: pointer;
@@ -314,14 +314,14 @@
 }
 
 .searchToolbarBtn:hover {
-  border-color: #5eead4;
-  color: #fff;
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 .searchToolbarBtnActive {
-  background: rgba(45, 212, 191, 0.22);
-  border-color: #2dd4bf;
-  color: #5eead4;
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .searchToolbarMeta {
@@ -331,11 +331,11 @@
   gap: 10px 16px;
   margin-left: auto;
   font-size: 1.28rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .searchToolbarMeta strong {
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -343,9 +343,9 @@
   height: 34px;
   padding: 0 10px;
   border-radius: 8px;
-  border: 1px solid #475569;
-  background: #0f172a;
-  color: #e2e8f0;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
   font-size: 1.28rem;
   font-weight: 600;
   cursor: pointer;
@@ -369,9 +369,9 @@
   gap: 6px;
   min-width: 108px;
   border-radius: 8px;
-  border: 1px solid #475569;
-  background: rgba(30, 41, 59, 0.6);
-  color: #e2e8f0;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   font-size: 1.32rem;
   font-weight: 600;
   cursor: pointer;
@@ -382,8 +382,8 @@
 }
 
 .priceDropdownBtn:hover {
-  border-color: #5eead4;
-  color: #fff;
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 .priceDropdownBtn i {
@@ -400,10 +400,10 @@
   padding: 6px 0;
   margin: 0;
   list-style: none;
-  background: #1e293b;
-  border: 1px solid #475569;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 12px 32px var(--shadow);
 }
 
 .priceDropdownMenu button {
@@ -412,18 +412,18 @@
   padding: 10px 14px;
   border: none;
   background: transparent;
-  color: #e2e8f0;
+  color: var(--text-secondary);
   font-size: 1.3rem;
   cursor: pointer;
 }
 
 .priceDropdownMenu button:hover {
-  background: rgba(45, 212, 191, 0.12);
-  color: #5eead4;
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 
 .priceDropdownItemActive {
-  color: #2dd4bf !important;
+  color: var(--accent) !important;
   font-weight: 700;
 }
 

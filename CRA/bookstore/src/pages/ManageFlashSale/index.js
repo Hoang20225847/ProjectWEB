@@ -16,6 +16,7 @@ import { BOOK_FORMAT_OPTIONS } from '../../utils/bookFormat.js';
 import { matchesVietnameseSearch } from '../../utils/vietnameseSearch.js';
 
 import { resolveMediaUrl } from '../../config/api';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind({ ...adminStyles, ...voucherStyles, ...pageStyles });
 
@@ -67,6 +68,7 @@ const EMPTY_FORM = {
 };
 
 function ManageFlashSale() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [sales, setSales] = useState([]);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -280,7 +282,8 @@ function ManageFlashSale() {
   };
 
   const removeSale = async (sale) => {
-    if (!window.confirm(`Xóa flash sale "${sale.title}"?`)) return;
+    const ok = await confirmDelete({ title: 'Xóa flash sale', itemName: sale.title });
+    if (!ok) return;
     try {
       await adminDeleteFlashSale(sale._id);
       toast.success('Đã xóa flash sale');
@@ -566,7 +569,7 @@ function ManageFlashSale() {
       )}
 
       {modalOpen && (
-        <div className={cx('modalOverlay')} onClick={closeModal}>
+        <div className={cx('modalOverlay')} role="presentation">
           <div className={cx('modalCard')} onClick={(e) => e.stopPropagation()}>
             <div className={cx('modalHeader')}>
               <h3>{form._id ? 'Chỉnh sửa flash sale' : 'Tạo flash sale mới'}</h3>
@@ -698,7 +701,7 @@ function ManageFlashSale() {
       )}
 
       {bookPickerOpen && (
-        <div className={cx('bookModalOverlay')} onClick={() => setBookPickerOpen(false)}>
+        <div className={cx('bookModalOverlay')} role="presentation">
           <div className={cx('bookModalCard')} onClick={(e) => e.stopPropagation()}>
             <h4>Chọn sách cho flash sale</h4>
             <div className={cx('bookModalToolbar')}>
@@ -790,8 +793,10 @@ function ManageFlashSale() {
                   type="number"
                   min={1}
                   max={99}
+                  placeholder="10"
                   value={bulkDiscount}
                   onChange={(e) => setBulkDiscount(e.target.value)}
+                  aria-label="Phần trăm giảm giá áp dụng hàng loạt"
                 />
                 <span>%</span>
               </div>
@@ -892,6 +897,7 @@ function ManageFlashSale() {
           </div>
         </div>
       )}
+      <ConfirmDeleteDialog />
     </div>
   );
 }

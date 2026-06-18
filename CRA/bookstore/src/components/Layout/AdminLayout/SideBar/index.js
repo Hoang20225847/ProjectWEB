@@ -66,7 +66,7 @@ function Sidebar() {
         </ul>
       </nav>
 
-      <div className={cx('sidebar-footer')}>
+      {/* <div className={cx('sidebar-footer')}>
         <Link
           to="/"
           className={cx('category-item')}
@@ -75,7 +75,7 @@ function Sidebar() {
           <i className="fa-solid fa-house" />
           <span className={cx('category-title')}>Về Trang Chủ</span>
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }

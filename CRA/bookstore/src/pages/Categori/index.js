@@ -13,12 +13,17 @@ import { SEARCH_FILTER_QUERY_KEYS } from './searchFilterConstants.js';
 const PER_PAGE_OPTIONS = [7, 14, 21, 28, 35, 42];
 const DEFAULT_PER_PAGE = 14;
 
+/// <summary>
+/// Có bộ lọc facet trong URL (không chỉ keysearch) → dùng API /api/books/filter.
+/// </summary>
 function hasStructuredFilters(qp) {
   if (qp.get('category')) return true;
   return SEARCH_FILTER_QUERY_KEYS.some((k) => qp.get(k));
 }
 
-/** Query không gồm page/perPage — đổi bộ lọc thì reset về trang 1 */
+/// <summary>
+/// Chuỗi query không gồm page/perPage — đổi bộ lọc thì reset về trang 1.
+/// </summary>
 function filterSignatureFromSearch(search) {
   const sp = new URLSearchParams(search);
   sp.delete('page');
@@ -31,6 +36,9 @@ function filterSignatureFromSearch(search) {
   return out.toString();
 }
 
+/// <summary>
+/// Sắp xếp client-side: 0=đánh giá, 1=mới, 2=bán chạy, 3=giá tăng, 4=giá giảm.
+/// </summary>
 function sortBooks(arr, sortType) {
   const sorted = [...arr];
   switch (sortType) {
@@ -55,6 +63,9 @@ function sortBooks(arr, sortType) {
   return sorted;
 }
 
+/// <summary>
+/// Sinh dãy số trang kèm ellipsis khi tổng trang > 7.
+/// </summary>
 function buildPaginationItems(totalPages, current) {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -118,6 +129,9 @@ function Category() {
     const category = qp.get('category');
     const structured = hasStructuredFilters(qp);
 
+    /// <summary>
+    /// Ba nhánh: keysearch → search API; facet URL → filter API; mặc định → list + lọc category.
+    /// </summary>
     async function fetchData() {
       if (keysearch && !structured) {
         try {

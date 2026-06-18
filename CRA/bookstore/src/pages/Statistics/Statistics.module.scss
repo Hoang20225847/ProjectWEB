@@ -4,6 +4,8 @@
   padding: 24px 20px 48px;
   background: #f1f5f9;
   min-height: 100vh;
+  /* Trang thống kê dùng nền sáng — không kế thừa màu chữ sáng của dark theme body */
+  color: #0f172a;
 }
 
 .hero {
@@ -33,6 +35,7 @@
   margin-bottom: 20px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
 }
 
 .sectionTitle {
@@ -372,8 +375,9 @@
   margin-top: 8px;
   padding: 16px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: #fff;
   border: 1px solid #e2e8f0;
+  color: #0f172a;
 }
 
 .cardTitle {
@@ -387,28 +391,55 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 1.35rem;
+  color: #0f172a;
 }
 
 .table th,
 .table td {
   text-align: left;
-  padding: 10px 8px;
+  padding: 10px 12px;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .table th {
-  color: #64748b;
+  color: #475569;
+  font-weight: 700;
+  background: #f1f5f9;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.table td {
+  color: #0f172a;
   font-weight: 600;
 }
 
-.up {
-  color: #059669;
+.table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.table tbody tr:hover td {
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.table td:first-child {
+  color: #334155;
   font-weight: 700;
 }
 
+.table td:last-child {
+  font-weight: 800;
+}
+
+.up {
+  color: #059669 !important;
+  font-weight: 800;
+}
+
 .down {
-  color: #dc2626;
-  font-weight: 700;
+  color: #dc2626 !important;
+  font-weight: 800;
 }
 
 .subBlock {
@@ -486,9 +517,18 @@
 .barAlt {
   width: 100%;
   max-width: 28px;
-  min-height: 4px;
+  min-height: 0;
   border-radius: 6px 6px 0 0;
   background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+  transition: height 0.25s ease;
+}
+
+.barEmpty {
+  width: 100%;
+  max-width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: #e2e8f0;
 }
 
 .barLab {

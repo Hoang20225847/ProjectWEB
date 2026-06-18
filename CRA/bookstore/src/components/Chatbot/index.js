@@ -49,11 +49,17 @@ function renderMarkdown(text) {
 
 const CHAT_STORAGE_KEY = 'bookstore_chatbot_state';
 
+/// <summary>
+/// Header Authorization từ localStorage; khách không đăng nhập → không gửi token.
+/// </summary>
 function getAuthHeaders() {
   const token = localStorage.getItem('access_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/// <summary>
+/// Khôi phục sessionId và uiPhase từ sessionStorage.
+/// </summary>
 function loadPersistedState() {
   try {
     const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
@@ -142,6 +148,9 @@ async function postRate(sessionId, { rating, feedback, skip }) {
   return res.json();
 }
 
+/// <summary>
+/// Parse một block SSE (event + data JSON) từ stream phản hồi chatbot.
+/// </summary>
 function parseSseBlock(block) {
   let event = 'message';
   const dataLines = [];
@@ -164,6 +173,9 @@ function parseSseBlock(block) {
   return { event, data };
 }
 
+/// <summary>
+/// Widget chatbot: session lifecycle (chat → continue → feedback → ended) và SSE streaming.
+/// </summary>
 function Chatbot() {
   const { auth } = useContext(AuthContext);
   const isLoggedIn = !!auth?.isAuthenticated;
@@ -176,7 +188,7 @@ function Chatbot() {
   const [messages, setMessages] = useState([{ text: greeting, sender: 'bot' }]);
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
-  /** chat | continue | resolved | feedback | ended */
+  /** uiPhase: chat | continue | resolved | feedback | ended */
   const [uiPhase, setUiPhase] = useState('chat');
   const [sessionMeta, setSessionMeta] = useState(null);
   const [issueResolved, setIssueResolved] = useState('');
@@ -188,6 +200,7 @@ function Chatbot() {
   const messagesEndRef = useRef(null);
   const feedbackSkipTimerRef = useRef(null);
   const hydratedRef = useRef(false);
+  const pollTimerRef = useRef(null);
 
   const resetChat = useCallback(() => {
     sessionIdRef.current = null;
@@ -200,6 +213,9 @@ function Chatbot() {
     setMessages([{ text: greeting, sender: 'bot' }]);
   }, [greeting]);
 
+  /// <summary>
+  /// Đồng bộ uiPhase từ server state (awaiting_continue, needsFeedback, closed…).
+  /// </summary>
   const applySessionState = useCallback((state) => {
     if (!state) return;
     setSessionMeta(state);
@@ -287,14 +303,20 @@ function Chatbot() {
     };
   }, [applySessionState, mapApiMessages]);
 
+  /// <summary>
+  /// Tạo session mới nếu chưa có; đồng bộ state từ server khi panel đang mở.
+  /// </summary>
   const ensureSession = useCallback(async () => {
     if (sessionIdRef.current) return sessionIdRef.current;
     const data = await createSession();
     sessionIdRef.current = data.sessionId;
     setSessionMeta(data);
     setUiPhase('chat');
+    if (isOpen) {
+      fetchSessionState(data.sessionId).then(applySessionState).catch(() => {});
+    }
     return data.sessionId;
-  }, []);
+  }, [applySessionState, isOpen]);
 
   const pollSession = useCallback(async () => {
     const sid = sessionIdRef.current;
@@ -323,11 +345,32 @@ function Chatbot() {
   }, [isOpen, applySessionState, uiPhase]);
 
   useEffect(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
     if (!isOpen || !sessionIdRef.current) return undefined;
-    const t = setInterval(() => {
+    pollSession().catch(() => {});
+    pollTimerRef.current = setInterval(() => {
       pollSession().catch(() => {});
     }, 20000);
-    return () => clearInterval(t);
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [isOpen, sessionMeta?.sessionId, pollSession]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onFocus = () => {
+      pollSession().catch(() => {});
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+    };
   }, [isOpen, pollSession]);
 
   useEffect(() => {
@@ -468,6 +511,9 @@ function Chatbot() {
     }
   };
 
+  /// <summary>
+  /// Gửi tin nhắn và đọc phản hồi SSE; xử lý 409 (phase continue) và tạo session mới khi 404.
+  /// </summary>
   const streamReply = useCallback(
     async (content) => {
       const send = async (sid) => {
@@ -536,6 +582,24 @@ function Chatbot() {
             ];
           });
           return;
+        }
+        if (body.status === 'closed' && body.endReason === 'rated') {
+          setUiPhase('ended');
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last?.sender === 'bot' && last?.streaming) next.pop();
+            return [
+              ...next,
+              {
+                text: 'Phiên trước đã kết thúc sau khi bạn đánh giá. Mình tạo phiên mới để tiếp tục hỗ trợ nhé.',
+                sender: 'bot',
+              },
+            ];
+          });
+          sessionIdRef.current = null;
+          sid = await ensureSession();
+          res = await send(sid);
         }
       }
 
@@ -681,16 +745,12 @@ function Chatbot() {
 
   return (
     <div className={styles.chatbotWidget}>
-      <button className={styles.chatToggle} onClick={toggleChat} aria-label="Mở chatbot">
-        {isOpen ? (
-          <i className="fa-solid fa-xmark" />
-        ) : (
-          <>
-            <i className="fa-solid fa-comment-dots" />
-            <span className={styles.chatBadge}>Chat</span>
-          </>
-        )}
-      </button>
+      {!isOpen && (
+        <button className={styles.chatToggle} onClick={toggleChat} aria-label="Mở chatbot">
+          <i className="fa-solid fa-comment-dots" />
+          <span className={styles.chatBadge}>Chat</span>
+        </button>
+      )}
 
       {isOpen && (
         <div className={styles.chatWindow}>
@@ -712,7 +772,7 @@ function Chatbot() {
                 </span>
               </div>
             </div>
-            <button className={styles.chatClose} onClick={toggleChat} type="button">
+            <button className={styles.chatClose} onClick={toggleChat} type="button" aria-label="Đóng chatbot">
               <i className="fa-solid fa-xmark" />
             </button>
           </div>

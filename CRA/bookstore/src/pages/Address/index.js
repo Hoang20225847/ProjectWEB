@@ -56,10 +56,6 @@ const modalContainer=document.querySelector('.modal-container')
           modal.classList.remove('open')
         }
   }
-  if(modal)
-  {
-    modal.addEventListener('click',hideAddAddress)
-  }
   if(modalContainer)
   {
     modalContainer.addEventListener('click',function(event)
@@ -85,7 +81,6 @@ if(removeBtn){
 return ()=>{
    if (addBtn) addBtn.removeEventListener('click', showAddAddress);
     if (removeBtn) removeBtn.removeEventListener('click', hideAddAddress);
-    if (modal) modal.removeEventListener('click', hideAddAddress);
     if (modalContainer) modalContainer.removeEventListener('click', function(event)
   {
     event.stopPropagation();

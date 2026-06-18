@@ -49,7 +49,7 @@ function AddReviewModal({ onClose, onNext, product, userId }) {
   if (!product?.bookId) return null;
 
   return (
-    <div className={cx('overlay')} onClick={onClose} role="presentation">
+    <div className={cx('overlay')} role="presentation">
       <div
         className={cx('panel')}
         onClick={(e) => e.stopPropagation()}

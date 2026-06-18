@@ -102,6 +102,11 @@ width: calc(100% - 16.6667%);
     flex: 1 1 auto;
     min-width: 0;
 }
+/* /search, /flash-sale: full width catalog layout */
+.app__content--search {
+    padding-top: 12px;
+    padding-bottom: 32px;
+}
 /* Trang chủ: nền đồng bộ, bỏ khoảng cách tách header — nội dung sát header */
 .app__container--home {
     background-color: #121212;

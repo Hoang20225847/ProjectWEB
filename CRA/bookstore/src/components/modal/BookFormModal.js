@@ -390,7 +390,7 @@ function BookFormModal({ book = null, onClose, onSuccess }) {
   const publisherInList = !publisherPick || publisherNames.includes(publisherPick);
 
   return (
-    <div className={cx('modalOverlay')} onClick={onClose}>
+    <div className={cx('modalOverlay')} role="presentation">
       <div className={cx('modalContent')} onClick={(ev) => ev.stopPropagation()}>
         <div
           className={cx('modalHeader', { 'modalHeader--edit': isEdit })}

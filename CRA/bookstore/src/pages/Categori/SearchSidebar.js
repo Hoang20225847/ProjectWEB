@@ -3,10 +3,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './SearchSidebar.module.scss';
 import { RATING_FILTER_OPTIONS } from './searchFilterConstants.js';
 
+/// <summary>
+/// Đọc query param dạng CSV và trả về tập giá trị đã chọn (không trùng, bỏ rỗng).
+/// </summary>
 function getCsvSet(searchParams, key) {
   return new Set((searchParams.get(key) || '').split(',').map((s) => s.trim()).filter(Boolean));
 }
 
+/// <summary>
+/// Bật/tắt một giá trị trong query param CSV; xóa key nếu không còn giá trị nào.
+/// </summary>
 function toggleCsvParam(setSearchParams, key, value, checked) {
   setSearchParams(
     (prev) => {
@@ -22,6 +28,9 @@ function toggleCsvParam(setSearchParams, key, value, checked) {
   );
 }
 
+/// <summary>
+/// Khối checkbox lọc đa chọn; đồng bộ trạng thái với URL search params.
+/// </summary>
 function CheckboxBlock({ title, options, paramKey, searchParams, setSearchParams, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   const selected = useMemo(() => getCsvSet(searchParams, paramKey), [searchParams, paramKey]);
@@ -54,6 +63,9 @@ function CheckboxBlock({ title, options, paramKey, searchParams, setSearchParams
   );
 }
 
+/// <summary>
+/// Ô nhập năm xuất bản; ghi `year` vào URL khi blur hoặc Enter (định dạng 4 chữ số).
+/// </summary>
 function YearInputBlock({ searchParams, setSearchParams }) {
   const urlYear = searchParams.get('year') || searchParams.get('years')?.split(',')[0]?.trim() || '';
   const [draft, setDraft] = useState(urlYear);
@@ -108,6 +120,9 @@ function YearInputBlock({ searchParams, setSearchParams }) {
   );
 }
 
+/// <summary>
+/// Lọc theo điểm đánh giá tối thiểu (`minRating`); chỉ cho chọn một mức tại một thời điểm.
+/// </summary>
 function RatingBlock({ searchParams, setSearchParams }) {
   const current = searchParams.get('minRating') || '';
   return (
@@ -137,6 +152,9 @@ function RatingBlock({ searchParams, setSearchParams }) {
   );
 }
 
+/// <summary>
+/// Một checkbox boolean gắn query param (`true` / xóa key).
+/// </summary>
 function ToggleRow({ title, label, paramKey, searchParams, setSearchParams }) {
   const checked = searchParams.get(paramKey) === 'true';
   return (
@@ -177,6 +195,9 @@ const FILTER_BLOCKS = [
   { key: 'formats', title: 'Hình thức', paramKey: 'formats' },
 ];
 
+/// <summary>
+/// Sidebar trang tìm kiếm: danh mục sách và các bộ lọc facet đồng bộ với URL query.
+/// </summary>
 export default function SearchSidebar({ searchParams, setSearchParams, categories, filterFacets }) {
   const activeSlug =
     searchParams.get('categorySlug') || searchParams.get('category') || '';
@@ -221,7 +242,6 @@ export default function SearchSidebar({ searchParams, setSearchParams, categorie
           </div>
           <div>
             <p className={styles.panelHeaderText}>Danh mục &amp; bộ lọc</p>
-            <p className={styles.panelHeaderSub}>Chọn thể loại và tinh chỉnh kết quả tìm kiếm</p>
           </div>
         </div>
 

@@ -25,11 +25,9 @@ const {
   resolveMemberTierDiscountPercent,
 } = require('../services/membershipService');
 
-/**
- * Populate sách trong từng dòng đơn — client (Purchase, ManageOrder) cần bookId.name / img.
- * Lưu ý: kể cả khi sách đã bị soft-delete (status=archived, deletedAt!=null) hoặc xóa cứng,
- * frontend nên fallback sang `bookSnapshot` để vẫn hiển thị được lịch sử đơn.
- */
+/// <summary>
+/// Populate sách trong items đơn; client fallback bookSnapshot khi sách đã xóa.
+/// </summary>
 const ORDER_ITEMS_BOOK_POPULATE = {
   path: 'items.bookId',
   select: 'name img slug status deletedAt',
@@ -50,6 +48,9 @@ function normalizeText(v) {
     .trim();
 }
 
+/// <summary>
+/// Sửa bookId lỗi trong items đơn cũ: map theo ObjectId hoặc tên sách (chỉ khi tên unique).
+/// </summary>
 async function repairOrderBookRefs(options = {}) {
   const { dryRun = false } = options;
   const orders = await Order.find({}, { items: 1 }).lean();
@@ -167,15 +168,70 @@ async function releasePointsIfNeeded(orderDoc) {
     await Order.updateOne({ _id: orderDoc._id }, { $set: { pointsConsumed: false } });
   }
 }
+
+function orderShortId(orderId) {
+  return String(orderId || '').slice(-6);
+}
+
+function buildOrderStatusNotification(orderId, newStatus, { cancelledByUser = false } = {}) {
+  const shortId = orderShortId(orderId);
+  switch (newStatus) {
+    case 'Đang giao':
+      return {
+        title: 'Đơn hàng đang được giao',
+        message: `Đơn hàng #${shortId} đã được xác nhận và đang trong quá trình vận chuyển.`,
+      };
+    case 'Hoàn thành':
+      return {
+        title: 'Đơn hàng đã hoàn thành',
+        message: `Đơn hàng #${shortId} đã được giao thành công. Cảm ơn bạn đã mua sắm!`,
+      };
+    case 'Đã hủy':
+      return {
+        title: 'Đơn hàng đã bị hủy',
+        message: cancelledByUser
+          ? `Đơn hàng #${shortId} đã được hủy theo yêu cầu của bạn.`
+          : `Đơn hàng #${shortId} đã bị hủy. Vui lòng liên hệ cửa hàng nếu bạn cần hỗ trợ thêm.`,
+      };
+    case 'Chờ xử lý':
+      return {
+        title: 'Cập nhật đơn hàng',
+        message: `Đơn hàng #${shortId} đã được cập nhật về trạng thái "Chờ xử lý".`,
+      };
+    default:
+      return {
+        title: 'Cập nhật trạng thái đơn hàng',
+        message: `Đơn hàng #${shortId} đã chuyển sang trạng thái "${newStatus}".`,
+      };
+  }
+}
+
+async function notifyOrderStatusChange(orderDoc, oldStatus, newStatus, options = {}) {
+  if (!orderDoc?.email || !orderDoc?._id || oldStatus === newStatus) return;
+  const { title, message } = buildOrderStatusNotification(orderDoc._id, newStatus, options);
+  createNotificationHelper(
+    orderDoc.email,
+    'order_status',
+    title,
+    message,
+    '/profile/purchase',
+    orderDoc._id,
+    null,
+    null,
+    null,
+    { oldStatus, newStatus }
+  ).catch((err) => console.log('Lỗi tạo notification (order status):', err));
+}
+
 class OrderController{
     
+   /// <summary>
+   /// Tạo đơn: validate tồn kho/giá, quote membership, trừ kho, consume voucher/điểm.
+   /// </summary>
    async create(req,res,next)
        {
-              
-              
-           try{ // Lấy dữ liệu từ request body
+           try{
             const { email, items, address, salesChannel, voucherCode, redeemPoints } = req.body;
-            console.log(req.body)
                 const account = await AccountUser.findOne({ email: String(email || '').toLowerCase().trim() })
                   .select('isMember totalSpentDong')
                   .lean();
@@ -472,6 +528,14 @@ class OrderController{
             }
           }
         }
+        if (prev.status !== nextStatus) {
+          await notifyOrderStatusChange(
+            { _id: item._id, email: prev.email },
+            prev.status,
+            nextStatus,
+            { cancelledByUser: false }
+          );
+        }
         return res.status(200).json('Thanh Cong');
     }
     catch(error)
@@ -521,23 +585,15 @@ class OrderController{
             
             let newStatus = '';
             let oldStatus = updateOrder.status;
-            let notificationTitle = '';
-            let notificationMessage = '';
             const action = String(req.body?.action || req.query?.action || '').toLowerCase().trim();
             
             // Logic chuyển trạng thái đơn hàng
             if (action === 'cancel' && updateOrder.status === 'Chờ xử lý') {
                 newStatus = 'Đã hủy';
-                notificationTitle = 'Đơn hàng đã bị hủy';
-                notificationMessage = `Đơn hàng #${updateOrder._id.toString().slice(-6)} đã được hủy theo yêu cầu của bạn.`;
             } else if(updateOrder.status === "Chờ xử lý"){
                 newStatus = "Đang giao"; // Admin xác nhận đơn hàng
-                notificationTitle = 'Đơn hàng đang được giao';
-                notificationMessage = `Đơn hàng #${updateOrder._id.toString().slice(-6)} đã được xác nhận và đang trong quá trình vận chuyển.`;
             } else if(updateOrder.status === "Đang giao"){
                 newStatus = "Hoàn thành";
-                notificationTitle = 'Đơn hàng đã hoàn thành';
-                notificationMessage = `Đơn hàng #${updateOrder._id.toString().slice(-6)} đã được giao thành công. Cảm ơn bạn đã mua sắm!`;
             } else {
                 return res.status(400).json('Không thể cập nhật trạng thái này');
             }
@@ -564,19 +620,12 @@ class OrderController{
                }
              }
              
-             // Tạo notification khi trạng thái đơn hàng được cập nhật (không blocking)
-             if (notificationTitle) {
-                 createNotificationHelper(
-                     updateOrder.email,
-                     'order_status',
-                     notificationTitle,
-                     notificationMessage,
-                     '/profile/purchase',
-                     updateOrder._id,
-                     null, null, null,
-                     { oldStatus, newStatus }
-                 ).catch(err => console.log('Lỗi tạo notification:', err));
-             }
+             await notifyOrderStatusChange(
+               updateOrder,
+               oldStatus,
+               newStatus,
+               { cancelledByUser: action === 'cancel' }
+             );
              
              return res.status(200).json('Thanh Cong')
         }catch(error)

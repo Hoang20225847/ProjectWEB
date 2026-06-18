@@ -7,8 +7,9 @@ import { useLocation } from "react-router-dom";
 function DefaultLayout({children}) {
     const { pathname } = useLocation();
     const isHome = pathname === "/";
-    /** Trang chủ + /search: không hiện sidebar cột trái (tránh trùng danh mục) */
-    const hideNavSidebar = pathname === "/" || pathname === "/search";
+    const isCatalogBrowse = pathname === "/search" || pathname === "/flash-sale";
+    /** Trang chủ + catalog browse: không hiện sidebar cột trái */
+    const hideNavSidebar = pathname === "/" || isCatalogBrowse;
     return ( <div>
         <Header/>
         {isHome && (
@@ -23,7 +24,7 @@ function DefaultLayout({children}) {
             <div
               className={`grid__row app__content${isHome ? " app__content--home" : ""}${
                 hideNavSidebar && !isHome ? " app__content--full" : ""
-              }`}
+              }${isCatalogBrowse ? " app__content--search" : ""}`}
             >
             {!hideNavSidebar && <Sidebar />}
             
@@ -33,7 +34,7 @@ function DefaultLayout({children}) {
         </div>
         </div>
         </div>
-        <Footer/>
+        {!isCatalogBrowse && <Footer/>}
     </div> );
 }
 

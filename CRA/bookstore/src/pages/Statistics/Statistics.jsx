@@ -118,6 +118,7 @@ function Statistics() {
   }, []);
 
   const maxPeriodRev = Math.max(...periodData.map((p) => p.revenue || 0), 1);
+  const maxMonthlyCount = Math.max(...monthlyOrders.map((m) => m.count || 0), 1);
 
   const statusBarColor = {
     'Chờ xử lý': '#f59e0b',
@@ -436,28 +437,33 @@ function Statistics() {
         </div>
 
         <div className={styles.subBlock}>
-          <h3 className={styles.cardTitle}>Theo tháng trong năm {selectedYear}</h3>
+          <h3 className={styles.cardTitle}>Số đơn theo tháng trong năm {selectedYear}</h3>
           <p className={styles.muted} style={{ marginBottom: 12 }}>
-            Dùng năm của ngày &quot;Từ&quot; — chỉnh ngày bắt đầu nếu cần năm khác.
+           
           </p>
           <div className={styles.barChartMonth}>
-            {monthlyOrders.map((m) => (
+            {monthlyOrders.map((m) => {
+              const count = m.count || 0;
+              const barHeight =
+                count > 0 ? Math.max(18, Math.round((count / maxMonthlyCount) * 140)) : 0;
+              return (
               <div key={m.month} className={styles.barCol}>
                 <div className={styles.barWrap}>
-                  <div
-                    className={styles.barAlt}
-                    style={{
-                      height: `${Math.max(
-                        4,
-                        (m.revenue / Math.max(...monthlyOrders.map((x) => x.revenue || 0), 1)) * 140
-                      )}px`,
-                    }}
-                  />
+                  {count > 0 ? (
+                    <div
+                      className={styles.barAlt}
+                      style={{ height: `${barHeight}px` }}
+                      title={`${count} đơn · ${formatCurrency(m.revenue || 0)}đ`}
+                    />
+                  ) : (
+                    <div className={styles.barEmpty} aria-hidden />
+                  )}
                 </div>
                 <span className={styles.barLab}>T{m.month}</span>
-                <span className={styles.barVal}>{m.count || 0} đơn</span>
+                <span className={styles.barVal}>{count} đơn</span>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>

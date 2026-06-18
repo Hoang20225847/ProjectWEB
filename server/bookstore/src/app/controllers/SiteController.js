@@ -512,7 +512,7 @@ class SiteController{
                 email:account.email,
                 name:account.name,
                 avt:account.avt,
-                role:account.role,
+                role: req.user.role === 'admin' ? 'admin' : 'user',
                 isMember: isMemberLike,
                 phone:account.phone || '',
                 membershipTierSlug: account.membershipTier?.slug || '',
@@ -558,7 +558,7 @@ class SiteController{
           name:account.name,
           avt:account.avt,
           phone:account.phone || '',
-          role:account.role,
+          role: req.user.role === 'admin' ? 'admin' : 'user',
           isMember: isMemberLike,
           membershipTierSlug: account.membershipTier?.slug || '',
           membershipTierName: account.membershipTier?.name || '',
@@ -574,30 +574,41 @@ class SiteController{
     }
   }
 async changeInfo(req,res,next)
-       {  
+       {
             try{
-              const account = await Account.findOne({email:req.body.email});
+              const email = String(req.body.email || '').toLowerCase().trim();
+              if (!req.user?.email || String(req.user.email).toLowerCase().trim() !== email) {
+                return res.status(403).json({ message: 'Không được sửa hồ sơ người khác' });
+              }
+              const account = await Account.findOne({ email });
               if(!account)
               {
                 return res.status(404).json({message:"Not login"})
               }
-              if(account.name !== req.body.name)
-              {
-                account.name=req.body.name;
-                 await account.save()
+              if (req.body.name != null) {
+                account.name = String(req.body.name).trim();
               }
-            
+              if (req.body.phone != null) {
+                const phone = String(req.body.phone).replace(/\s+/g, '');
+                if (phone && !/^0\d{9}$/.test(phone)) {
+                  return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+                }
+                account.phone = phone;
+              }
+              await account.save();
+
               return res.json({user:{
                 email:account.email,
                 name:account.name,
-                avt:account.avt
+                avt:account.avt,
+                phone: account.phone || '',
               }})
             }
             catch(error)
             {  console.error("Error updating account:", error);  // Log chi tiết lỗi
               next(error)};
-              
-            
+
+
 }
 async createAddress(req,res,next)
        {
@@ -712,10 +723,6 @@ async createAddress(req,res,next)
       }
       const user = await Account.findById(id);
       if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
-      if (user.role === 'admin') {
-        return res.status(403).json({ message: 'Không thể xóa tài khoản admin' });
-      }
-
       const Cart = require('../models/Carts');
       const Notification = require('../models/Notifications');
       const Review = require('../models/Review');

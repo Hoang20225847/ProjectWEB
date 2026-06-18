@@ -13,10 +13,12 @@ import { useAdminPagedRows } from '../../hooks/useAdminPagedRows.js';
 import { LS_CAT_COLS, CATEGORY_TABLE_SPEC } from '../../config/adminDashboardSpecs.js';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { Link } from 'react-router-dom';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind(styles);
 
 function ManageCategory() {
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
   const [data, setData] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showColSettings, setShowColSettings] = useState(false);
@@ -70,7 +72,8 @@ function ManageCategory() {
   };
 
   const handleDelete = async (item) => {
-    if (!window.confirm(`Xóa danh mục "${item.name}"?`)) return;
+    const ok = await confirmDelete({ title: 'Xóa danh mục', itemName: item.name });
+    if (!ok) return;
     try {
       await axios.delete(`/api/categories/${item._id}`);
       toast.success('Đã xóa danh mục');
@@ -290,6 +293,7 @@ function ManageCategory() {
       {showAddModal && (
         <AddCategoryModal onClose={() => setShowAddModal(false)} onAddSuccess={() => load()} />
       )}
+      <ConfirmDeleteDialog />
     </div>
   );
 }

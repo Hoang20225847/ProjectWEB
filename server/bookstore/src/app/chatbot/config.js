@@ -88,7 +88,7 @@ const config = {
   },
 
   session: {
-    idleMinutes: Number(env.CHATBOT_SESSION_IDLE_MINUTES || 5),
+    idleMinutes: Number(env.CHATBOT_SESSION_IDLE_MINUTES || 1),
     sweepIntervalSec: Number(env.CHATBOT_SESSION_SWEEP_SEC || 30),
     tokenThreshold: Number(env.CHATBOT_SESSION_TOKEN_THRESHOLD || 1500),
     feedbackSkipSec: Number(env.CHATBOT_FEEDBACK_SKIP_SEC || 30),

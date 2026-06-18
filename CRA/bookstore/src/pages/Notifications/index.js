@@ -1,14 +1,16 @@
 import { useContext, useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import styles from './Notifications.module.scss';
-import { getNotifications, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } from '../../app/api/NotificationApi';
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, getNotificationNavigationPath } from '../../app/api/NotificationApi';
 import { AuthContext } from '../../components/context/auth.context';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { useConfirmDelete } from '../../hooks/useConfirmDelete.js';
 
 const cx = classNames.bind(styles);
 
 function Notifications() {
+    const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
     const { auth } = useContext(AuthContext);
     const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
@@ -84,14 +86,17 @@ function Notifications() {
     };
 
     const handleDeleteAll = async () => {
-        if (window.confirm('Bạn có chắc muốn xóa tất cả thông báo?')) {
-            try {
-                await deleteAllNotifications(auth.user.email, 'user');
-                toast.success('Đã xóa tất cả thông báo');
-                fetchNotifications();
-            } catch (error) {
-                toast.error('Có lỗi xảy ra');
-            }
+        const ok = await confirmDelete({
+            title: 'Xóa tất cả thông báo',
+            message: 'Bạn có chắc muốn xóa tất cả thông báo? Hành động này không thể hoàn tác.',
+        });
+        if (!ok) return;
+        try {
+            await deleteAllNotifications(auth.user.email, 'user');
+            toast.success('Đã xóa tất cả thông báo');
+            fetchNotifications();
+        } catch (error) {
+            toast.error('Có lỗi xảy ra');
         }
     };
 
@@ -99,8 +104,9 @@ function Notifications() {
         if (!notification.isRead) {
             handleMarkAsRead(notification._id);
         }
-        if (notification.link) {
-            navigate(notification.link);
+        const path = getNotificationNavigationPath(notification);
+        if (path) {
+            navigate(path);
         }
     };
 
@@ -116,13 +122,15 @@ function Notifications() {
                 return 'fa-solid fa-credit-card';
             case 'review':
                 return 'fa-solid fa-star-half-stroke';
+            case 'voucher':
+                return 'fa-solid fa-ticket';
             default:
                 return 'fa-solid fa-bell';
         }
     };
 
     const getNotificationTypeClass = (type) => {
-        const allowed = ['cart', 'order', 'order_status', 'payment', 'review'];
+        const allowed = ['cart', 'order', 'order_status', 'payment', 'review', 'voucher'];
         return allowed.includes(type) ? type : 'default';
     };
 
@@ -152,6 +160,7 @@ function Notifications() {
     const unreadCount = notifications.filter(item => !item.isRead).length;
 
     return (
+        <>
         <div className={cx('container')}>
             <div className="grid">
                 <div className={cx('notifications-page')}>
@@ -279,6 +288,8 @@ function Notifications() {
                 </div>
             </div>
         </div>
+        <ConfirmDeleteDialog />
+        </>
     );
 }
 

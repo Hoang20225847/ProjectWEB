@@ -207,6 +207,9 @@ function extractBookId(rawBookId) {
   return String(rawBookId);
 }
 
+/// <summary>
+/// Tính tổng tiền hàng đủ điều kiện áp voucher (theo eligibleBookIds hoặc toàn bộ).
+/// </summary>
 function computeVoucherEligibleSubtotal({ voucher, items, fallbackSubtotal }) {
   const allBooks = !!voucher?.applyAllBooks;
   const allowedIds = new Set((voucher?.eligibleBookIds || []).map((id) => String(id)));
@@ -222,13 +225,9 @@ function computeVoucherEligibleSubtotal({ voucher, items, fallbackSubtotal }) {
   return Math.max(0, eligible);
 }
 
-/**
- * @param {object} opts
- * @param {string} opts.email
- * @param {number} opts.goodsSubtotalDong — tổng tiền hàng (đồng)
- * @param {string} [opts.voucherCode]
- * @returns {Promise<object>}
- */
+/// <summary>
+/// Báo giá checkout: giảm hạng, voucher, điểm, phí ship, tổng thanh toán (đồng).
+/// </summary>
 async function quoteCheckout(opts) {
   await ensureMembershipSeed();
   const goodsSubtotalDong = Math.max(0, Math.round(Number(opts.goodsSubtotalDong) || 0));
@@ -436,16 +435,15 @@ async function appendPointTx(accountDoc, { type, points, orderId, note, meta }) 
   });
 }
 
-/**
- * Gọi khi đơn chuyển sang Hoàn thành: cộng chi tiêu, xét nâng hạng, tích điểm.
- */
+/// <summary>
+/// Khi đơn hoàn thành: cộng chi tiêu, xét nâng hạng, tích điểm loyalty.
+/// </summary>
 async function onOrderCompleted(order) {
   await ensureMembershipSeed();
   const email = String(order.email || '').toLowerCase().trim();
   if (!email) return;
   const account = await AccountUser.findOne({ email });
   if (!account) return;
-  /** Đồng bộ với getAccount: tham gia chương trình nếu isMember HOẶC đã gán hạng */
   const inMembershipProgram = !!(account.isMember || account.membershipTier);
   if (!inMembershipProgram) return;
 

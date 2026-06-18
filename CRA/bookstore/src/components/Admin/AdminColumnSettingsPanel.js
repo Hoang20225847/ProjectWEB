@@ -23,7 +23,7 @@ function AdminColumnSettingsPanel({
 
   return (
     <div className={cx('columnSettingsOverlay')} role="dialog" aria-modal="true" aria-labelledby="column-settings-title">
-      <div className={cx('columnSettingsBackdrop')} onClick={onClose} />
+      <div className={cx('columnSettingsBackdrop')} aria-hidden />
       <div className={cx('columnSettingsModal')}>
         <div className={cx('columnSettingsHeader')}>
           <h3 id="column-settings-title">

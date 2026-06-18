@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = 'ce86b645-b01e-4681-a77c-00ca11579502';
 
+/// <summary>
+/// Gắn req.user từ JWT Authorization header; lỗi verify → req.user = null (không ném).
+/// </summary>
 function tryAttachUser(req) {
   req.user = null;
   if (!req.headers || !req.headers.authorization) return;
@@ -23,6 +26,9 @@ function tryAttachUser(req) {
   }
 }
 
+/// <summary>
+/// Middleware toàn cục: whitelist route công khai + chatbot; route còn lại bắt buộc đăng nhập.
+/// </summary>
 const auth = (req, res, next) => {
   tryAttachUser(req);
 
@@ -52,8 +58,6 @@ const auth = (req, res, next) => {
       req.path === '/api/flash-sales/upcoming' ||
       req.path === '/api/flash-sales/for-books');
 
-  // Chatbot user endpoints chấp nhận khách (req.user có thể null).
-  // Admin endpoints (/api/chatbot/admin/*) tự enforce role='admin' trong controller.
   const isChatbotPath = req.path.startsWith('/api/chatbot');
 
   if (
@@ -77,7 +81,9 @@ const auth = (req, res, next) => {
   return next();
 };
 
-/** Bắt buộc đã đăng nhập (dùng trên route nhạy cảm — bổ sung cho middleware auth toàn cục). */
+/// <summary>
+/// Bắt buộc đã đăng nhập — dùng bổ sung trên route nhạy cảm.
+/// </summary>
 function verifyToken(req, res, next) {
   tryAttachUser(req);
   if (!req.user) {

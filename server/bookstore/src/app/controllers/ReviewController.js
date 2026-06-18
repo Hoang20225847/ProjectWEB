@@ -1,6 +1,7 @@
 
 const Review= require('../models/Review')
 const Book= require('../models/Books')
+const AccountUser = require('../models/AccountUsers')
 const mongoose = require('mongoose');
 const { notifyAllAdmins } = require('./NotificationController');
 async function updateBookEvaluate(bookId){
@@ -110,15 +111,20 @@ class ReviewController{
     async getReviewsByUser(req,res,next)
     {
         try{
-            const {email} = req.params;
-            const listReview = await Review.find({userId: email})
+            const emailParam = decodeURIComponent(req.params.email || '').trim().toLowerCase();
+            const requesterEmail = String(req.user?.email || '').trim().toLowerCase();
+            if (!requesterEmail || emailParam !== requesterEmail) {
+                return res.status(403).json({ message: 'Không được xem đánh giá của người khác' });
+            }
+            const account = await AccountUser.findOne({ email: req.user.email }).select('_id').lean();
+            if (!account?._id) {
+                return res.status(200).json([]);
+            }
+            const listReview = await Review.find({ userId: account._id })
                 .populate('bookId')
                 .sort({ createdAt: -1 });
             
-            if(!listReview.length>0){
-                return res.status(200).json([])
-            }
-            return res.status(200).json(listReview)
+            return res.status(200).json(Array.isArray(listReview) ? listReview : [])
         }
         catch(error){
             return res.status(400).json({

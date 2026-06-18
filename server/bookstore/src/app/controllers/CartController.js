@@ -14,6 +14,9 @@ function managedStockNumber(book) {
   return Number.isFinite(n) ? n : null;
 }
 
+/// <summary>
+/// Tải ngữ cảnh giá giỏ hàng: hội viên, % giảm hạng, flash sale đang chạy.
+/// </summary>
 async function getCartPricingContext(email) {
   const account = await AccountUser.findOne({ email: String(email || '').toLowerCase().trim() })
     .select('isMember totalSpentDong')
@@ -24,6 +27,9 @@ async function getCartPricingContext(email) {
   return { isMember, memberTierDiscountPercent, flashMap };
 }
 
+/// <summary>
+/// Tính đơn giá bán (đồng) của một sách theo flash sale, giảm sách và giảm hạng hội viên.
+/// </summary>
 function unitPriceForBook(book, ctx) {
   const flashMeta = ctx.flashMap.get(String(book._id));
   return discountedBookPriceVnd(book, {
@@ -33,9 +39,85 @@ function unitPriceForBook(book, ctx) {
   });
 }
 
-/**
- * @returns {{ removedFromCart: Array, newItems: Array, dirty: boolean }}
- */
+/// <summary>
+/// So sánh dòng checkout client với DB: giá, tồn kho, trạng thái bán;
+/// trả về danh sách thay đổi và items đã chuẩn hóa để đặt hàng.
+/// </summary>
+async function validateCheckoutItems(email, items) {
+  const ctx = await getCartPricingContext(email);
+  const changes = [];
+  const validatedItems = [];
+
+  for (const line of items || []) {
+    const rawBid = line?.bookId?._id || line?.bookId;
+    if (!rawBid) {
+      changes.push({ bookId: '', name: 'Sản phẩm', reason: 'notFound' });
+      continue;
+    }
+
+    const book = await Book.findById(rawBid).lean();
+    if (!book) {
+      changes.push({ bookId: String(rawBid), name: 'Sản phẩm', reason: 'notFound' });
+      continue;
+    }
+
+    if (!isWebOrderableListing(book)) {
+      changes.push({ bookId: String(book._id), name: book.name, reason: 'notOrderable' });
+      continue;
+    }
+
+    if (computeStockTier(book) === 'outOfStock') {
+      changes.push({ bookId: String(book._id), name: book.name, reason: 'outOfStock' });
+      continue;
+    }
+
+    const stockNum = managedStockNumber(book);
+    const price = unitPriceForBook(book, ctx);
+    const oldPrice = Number(line.price) || 0;
+    const oldQty = Math.max(0, Number(line.quantity) || 0);
+    let qty = oldQty > 0 ? oldQty : 1;
+
+    if (stockNum !== null && qty > stockNum) {
+      changes.push({
+        bookId: String(book._id),
+        name: book.name,
+        reason: 'quantityClamped',
+        previousQty: qty,
+        newQty: stockNum,
+      });
+      qty = stockNum;
+    }
+
+    if (oldPrice !== price) {
+      changes.push({
+        bookId: String(book._id),
+        name: book.name,
+        reason: 'priceChanged',
+        oldPrice,
+        newPrice: price,
+      });
+    }
+
+    validatedItems.push({
+      bookId: book,
+      quantity: qty,
+      price,
+      totalPrice: qty * price,
+      selected: line.selected !== false,
+    });
+  }
+
+  return {
+    changes,
+    validatedItems,
+    hasChanges: changes.length > 0,
+    canProceed: validatedItems.length > 0,
+  };
+}
+
+/// <summary>
+/// Đồng bộ từng dòng giỏ với DB: gỡ sách hết hàng/ngừng bán, chỉnh SL theo tồn, cập nhật giá.
+/// </summary>
 async function sanitizeCartLines(cart) {
   const ctx = await getCartPricingContext(cart.email);
   const removedFromCart = [];
@@ -111,19 +193,16 @@ async function sanitizeCartLines(cart) {
 
   return { removedFromCart, newItems, dirty };
 }
-const bcrypt=require('bcrypt')
-const saltRounds=10;
-const jwt =require('jsonwebtoken')
 class CartController{
-    
+
+   /// <summary>
+   /// Thêm sách vào giỏ: kiểm tra tồn kho, tính giá hiện tại, gộp dòng trùng bookId.
+   /// </summary>
    async create(req,res,next)
        {
-              
-           try{ // Lấy dữ liệu từ request body
+           try{
             const { email,items } = req.body;
-            console.log(req.body)
-            
-            // Validate input
+
             if (!email || !items || !items.bookId) {
                 console.log('Missing required fields');
                 return res.status(400).json({
@@ -131,7 +210,6 @@ class CartController{
                 });
             }
         
-                // Lấy thông tin sách để hiển thị trong notification
                 let bookInfo = { name: 'sản phẩm', img: null };
                 let book;
                 try {
@@ -193,7 +271,6 @@ class CartController{
                     }
                     await existingCart.save()
                     
-                    // Tạo notification khi thêm vào giỏ hàng thành công (không blocking)
                     createNotificationHelper(
                         email,
                         'cart',
@@ -221,7 +298,6 @@ class CartController{
                     })  
                     await newCart.save();
                     
-                    // Tạo notification khi tạo giỏ hàng mới (không blocking)
                     createNotificationHelper(
                         email,
                         'cart',
@@ -249,6 +325,9 @@ class CartController{
          
     }
    
+   /// <summary>
+   /// Lấy giỏ hàng và tự đồng bộ dòng qua sanitizeCartLines; trả removedFromCart cho client.
+   /// </summary>
    async getCart(req,res,next){
         try{
              const { email } = req.query;
@@ -313,6 +392,23 @@ class CartController{
             res.status(400).json('Lỗi dữ liệu')
         }
    }
+   /// <summary>
+   /// API validate trước checkout: gọi validateCheckoutItems, trả changes + validatedItems.
+   /// </summary>
+   async validateCheckout(req, res, next) {
+        try {
+            const { email, items } = req.body;
+            if (!email || !Array.isArray(items) || items.length === 0) {
+                return res.status(400).json({ message: 'Thiếu thông tin đơn hàng' });
+            }
+            const result = await validateCheckoutItems(email, items);
+            return res.status(200).json(result);
+        } catch (error) {
+            console.log('Lỗi validate checkout:', error);
+            return res.status(400).json({ message: 'Không kiểm tra được đơn hàng' });
+        }
+   }
+
     async removeItemCart(req,res,next){
         try{    console.log(req.body)
              const {email,id} = req.body; 
@@ -320,7 +416,7 @@ class CartController{
                const result = await Cart.findOneAndUpdate(
                 { email },
                 { $pull: { items: { bookId: id } } },
-      { new: true } // trả về cart mới sau khi cập nhật
+      { new: true }
       
     );
     return res.status(200).json('thanh cong')

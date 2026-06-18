@@ -1,0 +1,133 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow: auto;
+  background: linear-gradient(165deg, #ffffff 0%, #fffbeb 52%, #fef3c7 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  box-shadow: 0 28px 56px -16px rgba(146, 64, 14, 0.28);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin: 28px auto 0;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  color: #d97706;
+  font-size: 2.6rem;
+}
+
+.body {
+  padding: 20px 28px 8px;
+  text-align: center;
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.message {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.changeList {
+  list-style: none;
+  margin: 16px 24px 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.changeItem {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  text-align: left;
+}
+
+.changeName {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.changeDetail {
+  display: block;
+  font-size: 1.3rem;
+  color: #92400e;
+}
+
+.footer {
+  display: flex;
+  gap: 10px;
+  padding: 22px 24px 24px;
+}
+
+.btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+
+.btnCancel {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.btnConfirm {
+  background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+  color: #0f172a;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
